@@ -14,8 +14,8 @@ show_plots=True
 verbose=False
 
 # Defines
-coursename = "221005_eksempelsegment001.xlsx"
-parquetfile='2022-06-05-12-12-09 (1).parquet'
+coursename = "data/221005_eksempelsegment001.xlsx"
+parquetfile='data/2022-06-05-12-12-09 (1).parquet'
 # Read data
 TDF0=pd.read_excel(coursename)
 
