@@ -1,3 +1,6 @@
+if 'pandas' not in globals():
+    import pandas as pd
+
 def coordinate_to_vector(point1, point2):
     '''
     Takes as input two three dimensional points and returns the distance between them in the dimensions.
@@ -7,6 +10,13 @@ def coordinate_to_vector(point1, point2):
     y=point2[1]-point1[1]
     z=point2[2]-point1[2]
     return (x, y, z)
+def coordinate_to_vector_dataframe(TDF0,column1="position_lat",column2="position_long",column3="altitude"):
+    coordinates=TDF0[[column1,column2,column3]]
+    VectorCoordinates=[coordinates.iloc[0].tolist()]*coordinates.shape[0]
+    for point in range(0,coordinates.shape[0]-1):
+        VectorCoordinates[point+1]=coordinate_to_vector(coordinates.iloc[point].tolist(),coordinates.iloc[point+1].tolist())
+    VectorDataframe=pd.DataFrame(VectorCoordinates,columns=['Vposition_lat',"Vposition_long","Valtitude"])
+    return VectorDataframe
 def cumulative_sum_with_limit(list1, list2, list3,l1=0.003,l2=0.003,l3=5,new_segment_marker=-1):
     '''
     running through three lists and outputting a marker list if a limit is reached.
