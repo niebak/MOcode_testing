@@ -27,7 +27,6 @@ segment_marker = cumulative_sum_with_limit(vector_Coordinates['Vposition_lat'],v
 segments = marker_to_segment(segment_marker)
 
 TDF0['segments'] = segments
-testdf=pd.concat([TDF0,vector_Coordinates],axis=1)
+TDF0=pd.concat([TDF0,vector_Coordinates],axis=1)
 
-print(testdf.columns)
 
