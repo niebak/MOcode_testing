@@ -22,4 +22,12 @@ if Verbose:
     print(tabulate(TDF0,headers='keys',tablefmt='github'))
 
 vector_Coordinates=coordinate_to_vector_dataframe(TDF0)
-print(vector_Coordinates)
+
+segment_marker = cumulative_sum_with_limit(vector_Coordinates['Vposition_lat'],vector_Coordinates['Vposition_long'],vector_Coordinates['Valtitude'])
+segments = marker_to_segment(segment_marker)
+
+TDF0['segments'] = segments
+testdf=pd.concat([TDF0,vector_Coordinates],axis=1)
+
+print(testdf.columns)
+

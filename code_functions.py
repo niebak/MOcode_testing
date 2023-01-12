@@ -15,7 +15,7 @@ def coordinate_to_vector_dataframe(TDF0,column1="position_lat",column2="position
     VectorCoordinates=[coordinates.iloc[0].tolist()]*coordinates.shape[0]
     for point in range(0,coordinates.shape[0]-1):
         VectorCoordinates[point+1]=coordinate_to_vector(coordinates.iloc[point].tolist(),coordinates.iloc[point+1].tolist())
-    VectorDataframe=pd.DataFrame(VectorCoordinates,columns=['position_lat',"position_long","altitude"])
+    VectorDataframe=pd.DataFrame(VectorCoordinates,columns=['Vposition_lat',"Vposition_long","Valtitude"])
     return VectorDataframe
 def cumulative_sum_with_limit(list1, list2, list3,l1=0.003,l2=0.003,l3=5,new_segment_marker=-1):
     '''
