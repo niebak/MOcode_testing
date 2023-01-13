@@ -5,7 +5,7 @@ import pandas as pd
 from code_functions import *
 
 # defines
-Verbose=False
+Verbose=True
 Show_Plot=False
 
 Weird_format=True
