@@ -54,3 +54,26 @@ def marker_to_segment(Marker_List,segment_marker=-1,initial_segment=-1):
             segmentname=segmentname+1
         segmentlist[i]=segmentname
     return segmentlist
+def detect_and_mark_change_in_direction(list1, list2, list3, threshold=10, change_limit=0.01):
+    growth_direction = None
+    marker_list = [0]*len(list1)
+    change_count = 0
+    for i in range(1, len(list1)):
+        if growth_direction is None:
+            if (list1[i] - list1[i - 1]) > change_limit or (list2[i] - list2[i - 1]) > change_limit or (list3[i] - list3[i - 1]) > change_limit:
+                growth_direction = "increasing"
+            elif (list1[i] - list1[i - 1]) < -change_limit or (list2[i] - list2[i - 1]) < -change_limit or (list3[i] - list3[i - 1]) < -change_limit:
+                growth_direction = "decreasing"
+        elif growth_direction == "increasing" and ((list1[i] - list1[i - 1]) < -change_limit or (list2[i] - list2[i - 1]) < -change_limit or (list3[i] - list3[i - 1]) < -change_limit):
+            change_count += 1
+            if change_count >= threshold:
+                marker_list[i] = -1
+                change_count = 0
+                growth_direction = "decreasing"
+        elif growth_direction == "decreasing" and ((list1[i] - list1[i - 1]) > change_limit or (list2[i] - list2[i - 1]) > change_limit or (list3[i] - list3[i - 1]) > change_limit):
+            change_count += 1
+            if change_count >= threshold:
+                marker_list[i] = -1
+                change_count = 0
+                growth_direction = "increasing"
+    return marker_list
