@@ -24,7 +24,7 @@ def coordinate_to_vector_dataframe(TDF0,column1="position_lat",column2="position
         VectorCoordinates[point+1]=coordinate_to_vector(coordinates.iloc[point].tolist(),coordinates.iloc[point+1].tolist())
     VectorDataframe=pd.DataFrame(VectorCoordinates,columns=['Vposition_lat',"Vposition_long","Valtitude"])
     return VectorDataframe
-def cumulative_sum_with_limit(list1, list2, list3,l1=0.003,l2=0.003,l3=5,new_segment_marker=-1):
+def cumulative_sum_with_limit(list1, list2, list3,l1=0.009,l2=0.009,l3=5,new_segment_marker=-1):
     '''
     Running through three lists and outputting a marker list if a limit is reached.
     '''
