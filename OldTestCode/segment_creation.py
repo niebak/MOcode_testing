@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate 
 import pandas as pd
+import sys
+sys.path.append('../DIVCODE')
+from code_functions import *
 from code_functions import *
 
 # defines

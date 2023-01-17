@@ -7,6 +7,9 @@ import pyarrow.parquet as pq
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from tabulate import tabulate
+import sys
+sys.path.append('../DIVCODE')
+from code_functions import *
 from code_functions import *
 
 # Some meta stuff
