@@ -12,6 +12,7 @@ coursename = "data/221005_eksempelsegment001.xlsx" # Short, but with a lot of da
 parquetfile='data/2022-06-05-12-12-09 (1).parquet' # Longer, from strava
 # Read data
 TDF0=pd.read_excel(coursename)
+TDF1=pd.read_parquet(parquetfile)
 # TDF0=pd.read_parquet(parquetfile)
 Weird_format=True # If the data is from the xlsx file, it is in a weird format so we need to change this
 if Weird_format:
@@ -42,17 +43,10 @@ segment_marker = detect_and_mark_change_in_direction(vlat,vlon,valt) # Create ma
 segments = marker_to_segment(segment_marker) # Go from markers to segments
 TDF0['segments'] = segments
 TDF0=pd.concat([TDF0,vector_Coordinates],axis=1) # Add change in the dimensions to the dataframe
-
-Show_Plot=False # Look at the segments
+# print(segments)
+Show_Plot=True # Look at the segments
 if Show_Plot:
-    fig = plt.figure()
-    ax0=fig.add_subplot(2,1,1)
-    ax0.plot(TDF0['position_long'],TDF0['position_lat'])
-    ax0.grid()
-    ax1=fig.add_subplot(2,1,2)
-    for i in range(segments[0],segments[-1]+2):
-        testdf=TDF0.loc[TDF0['segments']==i]
-        ax1.plot(testdf['position_long'],testdf['position_lat'])
+    ax0,ax1 = plot_segments_and_trail(TDF0)
     plt.show()
 
 Verbose = False # See the length of the segments in points

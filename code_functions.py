@@ -1,5 +1,7 @@
 if 'pandas' not in globals():
     import pandas as pd
+if 'matplotlib.pyplot' not in globals():
+    import matplotlib.pyplot as plt
 
 def coordinate_to_vector(point1, point2):
     '''
@@ -77,3 +79,23 @@ def detect_and_mark_change_in_direction(list1, list2, list3, threshold=10, chang
                 change_count = 0
                 growth_direction = "increasing"
     return marker_list
+
+def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
+                            segment_column='segments',Show_plot=False):
+    '''
+    Returns two axessubplots. Can also plot the subplots directly with Show_plot.
+    Takes a dataframe, and can also be given what columns to plot.
+    '''
+    fig = plt.figure()
+    ax0=fig.add_subplot(2,1,1)
+    segments=TDF0[segment_column].tolist()
+    ax0.plot(TDF0[x_axis],TDF0[y_axis])
+    ax0.grid()
+    ax1=fig.add_subplot(2,1,2)
+    for i in range(segments[0],segments[-1]+2):
+        testdf=TDF0.loc[TDF0[segment_column]==i]
+        ax1.plot(testdf[x_axis],testdf[y_axis])
+    ax1.grid()
+    if Show_plot:
+        plt.show()
+    return ax0,ax1
