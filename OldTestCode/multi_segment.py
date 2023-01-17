@@ -15,7 +15,7 @@ parquetfile='data/2022-06-05-12-12-09 (1).parquet' # Longer, from strava
 
 # Read data
 TDF0=pd.read_excel(coursename)
-TDF1=pd.read_parquet(parquetfile)
+#TDF1=pd.read_parquet(parquetfile)
 Weird_format=True # If the data is from the xlsx file, it is in a weird format so we need to change this
 if Weird_format:
     # The data is in a weird format so we need to change it:
@@ -24,25 +24,49 @@ if Weird_format:
 
 # Create the vector-representation coordinates
 TDF0_vector = coordinate_to_vector_dataframe(TDF0)
-TDF1_vector = coordinate_to_vector_dataframe(TDF1)
+#TDF1_vector = coordinate_to_vector_dataframe(TDF1)
 
 TDF0_seg_marker=detect_and_mark_change_in_direction(
     TDF0_vector['Vposition_lat'].tolist(),
     TDF0_vector['Vposition_long'].tolist(),
     TDF0_vector['Valtitude'].tolist())
 
-TDF1_seg_marker=detect_and_mark_change_in_direction(
-    TDF1_vector['Vposition_lat'].tolist(),
-    TDF1_vector['Vposition_long'].tolist(),
-    TDF1_vector['Valtitude'].tolist())
+# TDF1_seg_marker=detect_and_mark_change_in_direction(
+#     TDF1_vector['Vposition_lat'].tolist(),
+#     TDF1_vector['Vposition_long'].tolist(),
+#     TDF1_vector['Valtitude'].tolist())
 
 TDF0_seg =  marker_to_segment(TDF0_seg_marker)
-TDF1_seg =  marker_to_segment(TDF1_seg_marker)
-
+# TDF1_seg =  marker_to_segment(TDF1_seg_marker)
+TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
 TDF0['segments']=TDF0_seg
-TDF1['segments']=TDF1_seg
+# TDF1['segments']=TDF1_seg
 
-ax00,ax01 = plot_segments_and_trail(TDF0)
-ax10,ax11 = plot_segments_and_trail(TDF1)
+# ax00,ax01 = plot_segments_and_trail(TDF0)
+# # ax10,ax11 = plot_segments_and_trail(TDF1)
 
-plt.show()
+# plt.show()
+Show_Plot=True
+if Show_Plot:
+    fig = plt.figure()
+    ax0=fig.add_subplot(2,1,1)
+    segments=TDF0['segments'].tolist()
+    ax0.plot(TDF0['position_long'],TDF0['position_lat'])
+    ax0.grid()
+    ax1=fig.add_subplot(2,1,2)
+    for i in range(segments[0],segments[-1]+2):
+        testdf=TDF0.loc[TDF0['segments']==i]
+        ax1.plot(testdf['position_long'],testdf['position_lat'],label=f'{i}')
+    ax1.grid()
+    ax1.legend()
+    plt.show()
+
+for segment in np.unique(TDF0['segments'].tolist()):
+    wdf=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==segment]
+    print(f'\nSegment {segment} '+str(wdf.describe().loc[['mean','std','count']]))
+
+# segment_0=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==0]
+# segment_2=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==2]
+
+# print(segment_0.describe().loc[['mean','std']])
+# print(segment_2.describe().loc[['mean','std']])
