@@ -58,7 +58,6 @@ TDF2=pd.concat([TDF2,TDF2_vector],axis=1)
 
 TDF2['segments']=TDF2_seg
 
-plot_segments_and_trail(TDF2,Show_plot=True)
 for segment in np.unique(TDF0['segments'].tolist()):
     wdf=TDF2[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF2['segments']==segment]
     print(f'\nSegment {segment} '+str(wdf.describe().loc[['mean','std','count']]))
