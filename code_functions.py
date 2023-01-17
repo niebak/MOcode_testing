@@ -16,7 +16,7 @@ def coordinate_to_vector(point1, point2):
 def coordinate_to_vector_dataframe(TDF0,column1="position_lat",column2="position_long",column3="altitude"):
     '''
     Takes as input a DF with coordinates and expresses the coordinates as a series of changes from the previous point.
-    Returns a new DF with the original information, as well as another set of complete coordinates.
+    Returns a new DF with complete coordinates.
     '''
     coordinates=TDF0[[column1,column2,column3]]
     VectorCoordinates=[coordinates.iloc[0].tolist()]*coordinates.shape[0]
