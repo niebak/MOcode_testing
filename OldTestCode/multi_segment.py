@@ -41,8 +41,8 @@ TDF1_seg =  marker_to_segment(TDF1_seg_marker)
 
 TDF0['segments']=TDF0_seg
 TDF1['segments']=TDF1_seg
+print(TDF0_seg[-1],TDF1_seg[-1])
 
 ax00,ax01 = plot_segments_and_trail(TDF0)
 ax10,ax11 = plot_segments_and_trail(TDF1)
-
 plt.show()
