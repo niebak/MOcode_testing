@@ -10,10 +10,10 @@ Show_Plot=False
 
 coursename = "data/221005_eksempelsegment001.xlsx" # Short, but with a lot of data
 parquetfile='data/2022-06-05-12-12-09 (1).parquet' # Longer, from strava
+
 # Read data
 TDF0=pd.read_excel(coursename)
 TDF1=pd.read_parquet(parquetfile)
-# TDF0=pd.read_parquet(parquetfile)
 Weird_format=True # If the data is from the xlsx file, it is in a weird format so we need to change this
 if Weird_format:
     # The data is in a weird format so we need to change it:
