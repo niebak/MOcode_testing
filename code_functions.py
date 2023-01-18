@@ -141,3 +141,26 @@ def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
     frame.drop(droplist, axis=1, inplace=True)
     frame = frame.assign(timestamp=pd.Series(time[:i+1]).values)
     return frame
+
+def DF_to_segmented_DF(DF,Weird_format=False):
+    '''
+    Assumes that the dataframe has position_lat, position_long, and altitude.
+    Uses detect and mark change
+    '''
+    TDF0 = DF.copy()
+    if Weird_format:
+        # If the data comes from strava/garmin it is in a weird format
+        TDF0['position_lat'] = TDF0['position_lat']/(2**32/360)
+        TDF0['position_long'] = TDF0['position_long']/(2**32/360)
+       
+
+    # Create the vector-representation coordinates
+    TDF0_vector = coordinate_to_vector_dataframe(TDF0)
+    TDF0_seg_marker=detect_and_mark_change_in_direction(
+        TDF0_vector['Vposition_lat'].tolist(),
+        TDF0_vector['Vposition_long'].tolist(),
+        TDF0_vector['Valtitude'].tolist())
+    TDF0_seg =  marker_to_segment(TDF0_seg_marker, initial_segment=0)
+    TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
+    TDF0['segments']=TDF0_seg
+    return TDF0
