@@ -2,6 +2,9 @@ if 'pandas' not in globals():
     import pandas as pd
 if 'matplotlib.pyplot' not in globals():
     import matplotlib.pyplot as plt
+if 'numpy' not in globals():
+    import numpy as np
+from fitparse import FitFile
 
 def coordinate_to_vector(point1, point2):
     '''
@@ -111,3 +114,30 @@ def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
     if Show_plot:
         plt.show()
     return ax0,ax1
+def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
+    '''Returnerer en dataframe med valgfrie variabler per records fra fitfilen.
+    Variabler man ønsker må legges inn i vars, f.eks.:
+    vars = ['position_lat', 'position_long', 'altitude', 'distance',
+    'enhanced_altitude']
+    dataframe = fit_records_to_frame(fitfile, vars)
+    Som default vil timestamp, heart_rate og power returneres.
+    max_samp angir begrensning i hvor mange samples (sekunder) man maksimalt
+    kan hente ut. Standard tilsvarer 10 timer, som burde holde for de
+    fleste .fit-filer.
+    '''
+    if 'timestamp' in vars:
+        vars.remove('timestamp')
+    time = np.empty(max_samp, dtype='datetime64[s]')
+    data = np.empty((max_samp, len(vars)))
+    fit = FitFile(fitfile)
+    for i, rec in enumerate(fit.get_messages('record')):
+        for rec_data in rec:
+            if rec_data.name in vars and rec_data.value != None:
+                data[i, vars.index(rec_data.name)] = rec_data.value
+            elif rec_data.name == 'timestamp':
+                time[i] = rec_data.value
+    frame = pd.DataFrame(data[:i+1, :], columns=vars)
+    droplist = [i for i in frame.columns if all(v!=v for v in frame[i])]
+    frame.drop(droplist, axis=1, inplace=True)
+    frame = frame.assign(timestamp=pd.Series(time[:i+1]).values)
+    return frame

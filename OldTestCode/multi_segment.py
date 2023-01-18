@@ -38,11 +38,33 @@ TDF1_seg_marker=detect_and_mark_change_in_direction(
 
 TDF0_seg =  marker_to_segment(TDF0_seg_marker)
 TDF1_seg =  marker_to_segment(TDF1_seg_marker)
-
+TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
 TDF0['segments']=TDF0_seg
+# TDF1['segments']=TDF1_seg
 TDF1['segments']=TDF1_seg
 print(TDF0_seg[-1],TDF1_seg[-1])
 
 ax00,ax01 = plot_segments_and_trail(TDF0)
 ax10,ax11 = plot_segments_and_trail(TDF1)
+
 plt.show()
+
+for segment in np.unique(TDF0['segments'].tolist()):
+    wdf=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==segment]
+    print(f'\nSegment {segment} '+str(wdf.describe().loc[['mean','std','count']]))
+
+# segment_0=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==0]
+# segment_2=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==2]
+
+# print(segment_0.describe().loc[['mean','std']])
+# print(segment_2.describe().loc[['mean','std']])
+
+for segment in np.unique(TDF0['segments'].tolist()):
+    wdf=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==segment]
+    print(f'\nSegment {segment} '+str(wdf.describe().loc[['mean','std','count']]))
+
+# segment_0=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==0]
+# segment_2=TDF0[['Vposition_lat','Vposition_long','Valtitude']].loc[TDF0['segments']==2]
+
+# print(segment_0.describe().loc[['mean','std']])
+# print(segment_2.describe().loc[['mean','std']])
