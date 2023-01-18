@@ -20,7 +20,7 @@ df['position_long'] = df['position_long']/(2**32/360)
 df['bearing'] = np.nan
 
 #set sensitivity
-sensitivity = 10 # change this value to adjust sensitivity
+sensitivity = 15 # change this value to adjust sensitivity
 alt_sensitivity = 0 # change this value to adjust sensitivity
 
 # Loop through the dataframe to calculate the bearing at each point

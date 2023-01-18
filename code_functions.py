@@ -55,7 +55,7 @@ def cumulative_sum_with_limit(list1, list2, list3,l1=0.009,l2=0.009,l3=5,new_seg
             cum_sum2=0
             cum_sum3=0
     return markers
-def marker_to_segment(Marker_List,segment_marker=-1,initial_segment=-1):
+def marker_to_segment(Marker_List,segment_marker=-1,initial_segment=0):
     '''
     Takes a marker-list and creates a segmentlist.
     '''
