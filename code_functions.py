@@ -199,6 +199,11 @@ def calculate_curvature(dataframe):
             curvature[i] = (dy[i] / dx[i]) / (1 + (dy[i] / dx[i])**2)**(3/2)
     return np.sum(curvature)
 def calculate_distance_from_straight_line(df):
+    '''
+    Can be used to quantify the degree of a turn by returning the distance it is from a straight line
+    from its start to end point. Works on segments.
+    Returns the mean.
+    '''
     x1, y1 = df.iloc[0]['position_long'], df.iloc[0]['position_lat']
     x2, y2 = df.iloc[-1]['position_long'], df.iloc[-1]['position_lat']
     m = (y2 - y1) / (x2 - x1)
