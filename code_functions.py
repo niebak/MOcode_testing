@@ -96,9 +96,9 @@ def detect_and_mark_change_in_direction(list1, list2, list3, threshold=10, chang
     return marker_list
 
 def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
-                            segment_column='segments',Show_plot=False):
+                            segment_column='segments',Show_Plot=False):
     '''
-    Returns two axessubplots. Can also plot the subplots directly with Show_plot.
+    Returns two axessubplots. Can also plot the subplots directly with Show_Plot.
     Takes a dataframe, and can also be given what columns to plot.
     '''
     fig = plt.figure()
@@ -111,7 +111,7 @@ def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
         testdf=TDF0.loc[TDF0[segment_column]==i]
         ax1.plot(testdf[x_axis],testdf[y_axis])
     ax1.grid()
-    if Show_plot:
+    if Show_Plot:
         plt.show()
     return ax0,ax1
 def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
@@ -164,3 +164,45 @@ def DF_to_segmented_DF(DF,Weird_format=False):
     TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
     TDF0['segments']=TDF0_seg
     return TDF0
+
+def create_segmentDF_fromDF(TDF2,variables=['Vposition_lat','Vposition_long','Valtitude','segments']):
+    '''
+    Goes from a long dataframe to a dataframe defined as the mean of each segment representing each segment.
+    Uses variables=['Vposition_lat','Vposition_long','Valtitude','segments'], and returns a dataframe
+    '''
+    SDF2 = TDF2[variables].groupby('segments').mean()
+    return SDF2
+
+def find_distance(df):
+    '''
+    Works on segments. Assumes distance is present in the data.
+    Returns distance from start to end.
+    '''
+    start=df['distance'].iloc[0]
+    stop=df['distance'].iloc[-1]
+    return round(stop-start,2)
+def calculate_curvature(dataframe):
+    '''
+    Works on segments. Assumes I have position_long and position_lat available. 
+    Returns curvature over the __entire__ dataframe.
+    '''
+    x = dataframe['position_long'].values
+    y = dataframe['position_lat'].values
+    dx = np.diff(x)
+    dy = np.diff(y)
+    curvature = np.zeros(len(dx))
+    for i in range(len(dx)):
+        if dx[i] == 0 or dy[i] == 0:
+            curvature[i] = 0
+        else:
+            curvature[i] = (dy[i] / dx[i]) / (1 + (dy[i] / dx[i])**2)**(3/2)
+    return sum(curvature)
+def calculate_height_gained(dataframe):
+    '''
+    Assumes altitude is present in dataframe. Works on segments
+    Returns altitude difference in begining and end.
+    '''
+    start = dataframe['altitude'].iloc[0]
+    stop = dataframe['altitude'].iloc[-1]
+    height_gained = stop - start
+    return round(height_gained,2)
