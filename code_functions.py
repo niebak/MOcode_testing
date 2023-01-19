@@ -94,7 +94,6 @@ def detect_and_mark_change_in_direction(list1, list2, list3, threshold=10, chang
                 change_count = 0
                 growth_direction = "increasing"
     return marker_list
-
 def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
                             segment_column='segments',Show_Plot=False):
     '''
@@ -141,7 +140,6 @@ def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
     frame.drop(droplist, axis=1, inplace=True)
     frame = frame.assign(timestamp=pd.Series(time[:i+1]).values)
     return frame
-
 def DF_to_segmented_DF(DF,Weird_format=False):
     '''
     Assumes that the dataframe has position_lat, position_long, and altitude.
@@ -164,15 +162,17 @@ def DF_to_segmented_DF(DF,Weird_format=False):
     TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
     TDF0['segments']=TDF0_seg
     return TDF0
-
-def create_segmentDF_fromDF(TDF2,variables=['Vposition_lat','Vposition_long','Valtitude','segments']):
+def create_segmentDF_fromDF(TDF2,variables='all'):
     '''
     Goes from a long dataframe to a dataframe defined as the mean of each segment representing each segment.
     Uses variables=['Vposition_lat','Vposition_long','Valtitude','segments'], and returns a dataframe
     '''
-    SDF2 = TDF2[variables].groupby('segments').mean()
+    
+    if variables=='all':
+        SDF2 = TDF2.groupby('segments').mean()
+    else:
+        SDF2 = TDF2[variables].groupby('segments').mean()
     return SDF2
-
 def find_distance(df):
     '''
     Works on segments. Assumes distance is present in the data.
