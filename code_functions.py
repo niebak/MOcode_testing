@@ -103,12 +103,12 @@ def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
     fig = plt.figure()
     ax0=fig.add_subplot(2,1,1)
     segments=TDF0[segment_column].tolist()
-    ax0.plot(TDF0[x_axis],TDF0[y_axis])
+    ax0.plot(TDF0[x_axis],TDF0[y_axis],label='Complete trail')
     ax0.grid()
     ax1=fig.add_subplot(2,1,2)
-    for i in range(segments[0],segments[-1]+2):
+    for i in range(segments[0],segments[-1]+1):
         testdf=TDF0.loc[TDF0[segment_column]==i]
-        ax1.plot(testdf[x_axis],testdf[y_axis])
+        ax1.plot(testdf[x_axis],testdf[y_axis],label=i)
     ax1.grid()
     if Show_Plot:
         plt.show()
@@ -185,18 +185,29 @@ def calculate_curvature(dataframe):
     '''
     Works on segments. Assumes I have position_long and position_lat available. 
     Returns curvature over the __entire__ dataframe.
+     Change with Calsulate_distance_from_straight_line
     '''
     x = dataframe['position_long'].values
     y = dataframe['position_lat'].values
-    dx = np.diff(x)
-    dy = np.diff(y)
+    dx = np.gradient(x)
+    dy = np.gradient(y)
     curvature = np.zeros(len(dx))
     for i in range(len(dx)):
         if dx[i] == 0 or dy[i] == 0:
             curvature[i] = 0
         else:
             curvature[i] = (dy[i] / dx[i]) / (1 + (dy[i] / dx[i])**2)**(3/2)
-    return sum(curvature)
+    return np.sum(curvature)
+def calculate_distance_from_straight_line(df):
+    x1, y1 = df.iloc[0]['position_long'], df.iloc[0]['position_lat']
+    x2, y2 = df.iloc[-1]['position_long'], df.iloc[-1]['position_lat']
+    m = (y2 - y1) / (x2 - x1)
+    c = y1 - (m * x1)
+    distance = []
+    for i in range(len(df)):
+        x,y = df.iloc[i]['position_long'], df.iloc[i]['position_lat']
+        distance.append(abs(y - (m * x + c)))
+    return np.mean(distance)
 def calculate_height_gained(dataframe):
     '''
     Assumes altitude is present in dataframe. Works on segments
