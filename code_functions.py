@@ -55,7 +55,7 @@ def cumulative_sum_with_limit(list1, list2, list3,l1=0.009,l2=0.009,l3=5,new_seg
             cum_sum2=0
             cum_sum3=0
     return markers
-def marker_to_segment(Marker_List,segment_marker=-1,initial_segment=-1):
+def marker_to_segment(Marker_List,segment_marker=-1,initial_segment=0):
     '''
     Takes a marker-list and creates a segmentlist.
     '''
@@ -94,24 +94,23 @@ def detect_and_mark_change_in_direction(list1, list2, list3, threshold=10, chang
                 change_count = 0
                 growth_direction = "increasing"
     return marker_list
-
 def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
-                            segment_column='segments',Show_plot=False):
+                            segment_column='segments',Show_Plot=False):
     '''
-    Returns two axessubplots. Can also plot the subplots directly with Show_plot.
+    Returns two axessubplots. Can also plot the subplots directly with Show_Plot.
     Takes a dataframe, and can also be given what columns to plot.
     '''
     fig = plt.figure()
     ax0=fig.add_subplot(2,1,1)
     segments=TDF0[segment_column].tolist()
-    ax0.plot(TDF0[x_axis],TDF0[y_axis])
+    ax0.plot(TDF0[x_axis],TDF0[y_axis],label='Complete trail')
     ax0.grid()
     ax1=fig.add_subplot(2,1,2)
-    for i in range(segments[0],segments[-1]+2):
+    for i in range(segments[0],segments[-1]+1):
         testdf=TDF0.loc[TDF0[segment_column]==i]
-        ax1.plot(testdf[x_axis],testdf[y_axis])
+        ax1.plot(testdf[x_axis],testdf[y_axis],label=i)
     ax1.grid()
-    if Show_plot:
+    if Show_Plot:
         plt.show()
     return ax0,ax1
 def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
@@ -141,3 +140,106 @@ def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
     frame.drop(droplist, axis=1, inplace=True)
     frame = frame.assign(timestamp=pd.Series(time[:i+1]).values)
     return frame
+def DF_to_segmented_DF(DF,Weird_format=False):
+    '''
+    Assumes that the dataframe has position_lat, position_long, and altitude.
+    Uses detect and mark change
+    '''
+    TDF0 = DF.copy()
+    if Weird_format:
+        # If the data comes from strava/garmin it is in a weird format
+        TDF0['position_lat'] = TDF0['position_lat']/(2**32/360)
+        TDF0['position_long'] = TDF0['position_long']/(2**32/360)
+       
+    if 'distance' not in TDF0.columns:
+        TDF0=cum_haversine_distance(TDF0)
+    # Create the vector-representation coordinates
+    TDF0_vector = coordinate_to_vector_dataframe(TDF0)
+    TDF0_seg_marker=detect_and_mark_change_in_direction(
+        TDF0_vector['Vposition_lat'].tolist(),
+        TDF0_vector['Vposition_long'].tolist(),
+        TDF0_vector['Valtitude'].tolist())
+    TDF0_seg =  marker_to_segment(TDF0_seg_marker, initial_segment=0)
+    TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
+    TDF0['segments']=TDF0_seg
+    return TDF0
+def create_segmentDF_fromDF(TDF2,variables='all'):
+    '''
+    Goes from a long dataframe to a dataframe defined as the mean of each segment representing each segment.
+    Uses variables=['Vposition_lat','Vposition_long','Valtitude','segments'], and returns a dataframe
+    '''
+    
+    if variables=='all':
+        SDF2 = TDF2.groupby('segments').mean()
+    else:
+        SDF2 = TDF2[variables].groupby('segments').mean()
+    return SDF2
+def find_distance(df):
+    '''
+    Works on segments. If distance is not present, it will calculate the distance using euc. distance.
+    Returns distance from start to end.
+    '''
+    if 'distance' not in df.columns:
+        df=cum_haversine_distance(df)
+    start=df['distance'].iloc[0]
+    stop=df['distance'].iloc[-1]
+    return round(stop-start,2)
+def calculate_curvature(dataframe):
+    '''
+    Works on segments. Assumes I have position_long and position_lat available. 
+    Returns curvature over the __entire__ dataframe.
+     Change with Calsulate_distance_from_straight_line
+    '''
+    x = dataframe['position_long'].values
+    y = dataframe['position_lat'].values
+    dx = np.gradient(x)
+    dy = np.gradient(y)
+    curvature = np.zeros(len(dx))
+    for i in range(len(dx)):
+        if dx[i] == 0 or dy[i] == 0:
+            curvature[i] = 0
+        else:
+            curvature[i] = (dy[i] / dx[i]) / (1 + (dy[i] / dx[i])**2)**(3/2)
+    return np.sum(curvature)
+def calculate_distance_from_straight_line(df):
+    '''
+    Can be used to quantify the degree of a turn by returning the distance it is from a straight line
+    from its start to end point. Works on segments.
+    Returns the mean.
+    '''
+    x1, y1 = df.iloc[0]['position_long'], df.iloc[0]['position_lat']
+    x2, y2 = df.iloc[-1]['position_long'], df.iloc[-1]['position_lat']
+    m = (y2 - y1) / (x2 - x1)
+    c = y1 - (m * x1)
+    distance = []
+    for i in range(len(df)):
+        x,y = df.iloc[i]['position_long'], df.iloc[i]['position_lat']
+        distance.append(abs(y - (m * x + c)))
+    return np.mean(distance)
+def calculate_height_gained(dataframe):
+    '''
+    Assumes altitude is present in dataframe. Works on segments
+    Returns altitude difference in begining and end.
+    '''
+    start = dataframe['altitude'].iloc[0]
+    stop = dataframe['altitude'].iloc[-1]
+    height_gained = stop - start
+    return round(height_gained,4)
+def cum_haversine_distance(df,R = 6371*10**3):
+    '''
+    Adds the haversine distance in a seperate column.
+    Assumes earths radius to be 6371km, but this can be changed.
+    '''
+    if 'math' not in globals():
+        import math
+    df["pp_distance"] = 0.0
+    for i in range(len(df)-1):
+        lat1, lon1, lat2, lon2 = map(math.radians, [df.at[i, "position_lat"], df.at[i, "position_long"], df.at[i+1, "position_lat"], df.at[i+1, "position_long"]])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        d = R * c
+        df.at[i, "pp_distance"] = d
+    df["distance"] = df["pp_distance"].cumsum()
+    return df
