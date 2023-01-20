@@ -214,7 +214,7 @@ def calculate_distance_from_straight_line(df):
     distance = []
     for i in range(len(df)):
         x,y = df.iloc[i]['position_long'], df.iloc[i]['position_lat']
-        distance.append(abs(y - (m * x + c)))
+        distance.append((y - (m * x + c)))
     return np.mean(distance)
 def calculate_height_gained(dataframe):
     '''
