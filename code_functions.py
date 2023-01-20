@@ -151,7 +151,8 @@ def DF_to_segmented_DF(DF,Weird_format=False):
         TDF0['position_lat'] = TDF0['position_lat']/(2**32/360)
         TDF0['position_long'] = TDF0['position_long']/(2**32/360)
        
-
+    if 'distance' not in TDF0.columns:
+        TDF0=cum_haversine_distance(TDF0)
     # Create the vector-representation coordinates
     TDF0_vector = coordinate_to_vector_dataframe(TDF0)
     TDF0_seg_marker=detect_and_mark_change_in_direction(
@@ -175,9 +176,11 @@ def create_segmentDF_fromDF(TDF2,variables='all'):
     return SDF2
 def find_distance(df):
     '''
-    Works on segments. Assumes distance is present in the data.
+    Works on segments. If distance is not present, it will calculate the distance using euc. distance.
     Returns distance from start to end.
     '''
+    if 'distance' not in df.columns:
+        df=cum_haversine_distance(df)
     start=df['distance'].iloc[0]
     stop=df['distance'].iloc[-1]
     return round(stop-start,2)
@@ -221,4 +224,22 @@ def calculate_height_gained(dataframe):
     start = dataframe['altitude'].iloc[0]
     stop = dataframe['altitude'].iloc[-1]
     height_gained = stop - start
-    return round(height_gained,2)
+    return round(height_gained,4)
+def cum_haversine_distance(df,R = 6371*10**3):
+    '''
+    Adds the haversine distance in a seperate column.
+    Assumes earths radius to be 6371km, but this can be changed.
+    '''
+    if 'math' not in globals():
+        import math
+    df["pp_distance"] = 0.0
+    for i in range(len(df)-1):
+        lat1, lon1, lat2, lon2 = map(math.radians, [df.at[i, "position_lat"], df.at[i, "position_long"], df.at[i+1, "position_lat"], df.at[i+1, "position_long"]])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        d = R * c
+        df.at[i, "pp_distance"] = d
+    df["distance"] = df["pp_distance"].cumsum()
+    return df
