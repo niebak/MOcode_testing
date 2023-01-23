@@ -177,7 +177,13 @@ def DF_to_segmented_DF(DF,Weird_format=False):
     TDF0_seg =  marker_to_segment(TDF0_seg_marker, initial_segment=0)
     TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
     TDF0['segments']=TDF0_seg
-    add_velocity_column(TDF0)
+    if 'timestamp' in TDF0.columns:
+        add_velocity_column(TDF0)
+    else:
+        print('Have not added velocity column to Dataframe, errors might come as a result of this')
+    if 'speed' in TDF0.columns:
+        TDF0.rename(columns={'speed':'velocity [m/s]'},inplace=True)
+        print('Renamed "speed" to "velocity [m/s]"')
     return TDF0
 def create_segmentDF_fromDF(TDF2,variables='all'):
     '''
@@ -274,3 +280,52 @@ def add_velocity_column(df,inplace=True,add_time=False):
         df['velocity [km/h]'] = df['velocity [m/s]'] * 3.6
     if not(inplace):
         return velocity
+def segments_to_feature_df(TDF0):
+    '''
+    Goes from a segmented df to a feature df, which is only segments and their features
+    '''
+    curvature= [0]*(TDF0['segments'].iloc[-1]+1)
+    climb = [0]*(TDF0['segments'].iloc[-1]+1)
+    seg_dist = [0]*(TDF0['segments'].iloc[-1]+1)
+
+    for i in range(TDF0['segments'].iloc[-1]+1):
+        segment = TDF0.loc[TDF0["segments"]==i]
+        curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)
+        if abs(curvature[i])<1:
+            curvature[i]=0
+        climb[i]=calculate_height_gained(segment)
+        if abs(climb[i])<1:
+            climb[i]=0
+        seg_dist[i]=find_distance(segment)
+    featdict={'curvature':curvature,'climb':climb,'seg_distance':seg_dist}
+    featureDF=pd.DataFrame(featdict)
+    return featureDF
+def classify_feature_df(featureDF,curve_lim=1,climb_lim=3,inplace=True):
+    '''
+    Classifies a featureDF according to some criteria on curves/climbs. Has the following space:
+    [R/L turn or straight] [incline/decline/empty]
+    so [3x3] classes,+ 1 "unknown class" if none is applicable.
+    either returns a list of classes, or adds a column. 
+    '''
+    # Trying to write a classifier
+    Segment_Class=['']*featureDF.shape[0]
+    for segment in range(0,featureDF.shape[0]):
+        curve=featureDF['curvature'].iloc[segment]
+        climb=featureDF['climb'].iloc[segment]
+        distance=featureDF['seg_distance'].iloc[segment]
+        if curve> curve_lim:
+            Segment_Class[segment] = 'R turn'
+        if abs(curve)<=curve_lim:
+            Segment_Class[segment]='straight'
+        if curve<-curve_lim:
+            Segment_Class[segment]='L turn'
+        if climb>=climb_lim:
+            Segment_Class[segment]+=(' incline')
+        if climb<=-climb_lim:
+            Segment_Class[segment]+=(' decline')
+        if Segment_Class[segment] == '':
+            Segment_Class[segment] = 'Unknown class'
+    if inplace:
+        featureDF['class']=Segment_Class
+    else:
+        return Segment_Class
