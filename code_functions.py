@@ -177,6 +177,7 @@ def DF_to_segmented_DF(DF,Weird_format=False):
     TDF0_seg =  marker_to_segment(TDF0_seg_marker, initial_segment=0)
     TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
     TDF0['segments']=TDF0_seg
+    add_velocity_column(TDF0)
     return TDF0
 def create_segmentDF_fromDF(TDF2,variables='all'):
     '''
@@ -259,3 +260,17 @@ def cum_haversine_distance(df,R = 6371*10**3):
         df.at[i, "pp_distance"] = d
     df["distance"] = df["pp_distance"].cumsum()
     return df
+def add_velocity_column(df,inplace=True,add_time=False):
+    '''
+    Takes as input a dataframe with columns 'timestamp' and 'distance' and returns the velocity
+    in m/s and km/h.
+    '''
+    velocity = df['distance'].diff() / (df['timestamp'].diff().dt.total_seconds())
+    velocity[0]=0
+    if add_time:
+        df['total_seconds'] = (df['timestamp'].diff().dt.total_seconds().cumsum())
+    if inplace:
+        df['velocity [m/s]'] = velocity
+        df['velocity [km/h]'] = df['velocity [m/s]'] * 3.6
+    if not(inplace):
+        return velocity
