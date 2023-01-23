@@ -28,5 +28,5 @@ segments = marker_to_segment(segment_marker)
 
 TDF0['segments'] = segments
 TDF0=pd.concat([TDF0,vector_Coordinates],axis=1)
-
+plot_segments_and_trail(TDF0,Show_Plot=True)
 

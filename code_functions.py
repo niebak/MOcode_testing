@@ -5,6 +5,9 @@ if 'matplotlib.pyplot' not in globals():
 if 'numpy' not in globals():
     import numpy as np
 from fitparse import FitFile
+import os
+# To limit memory leak, will result in a higher runtime
+os.environ["OMP_NUM_THREADS"] = "1"
 
 def coordinate_to_vector(point1, point2):
     '''
@@ -27,30 +30,42 @@ def coordinate_to_vector_dataframe(TDF0,column1="position_lat",column2="position
         VectorCoordinates[point+1]=coordinate_to_vector(coordinates.iloc[point].tolist(),coordinates.iloc[point+1].tolist())
     VectorDataframe=pd.DataFrame(VectorCoordinates,columns=['Vposition_lat',"Vposition_long","Valtitude"])
     return VectorDataframe
-def cumulative_sum_with_limit(list1, list2, list3,l1=0.009,l2=0.009,l3=5,new_segment_marker=-1):
-    '''
-    Running through three lists and outputting a marker list if a limit is reached.
-    '''
-    cum_sum1=0
-    cum_sum2=0
-    cum_sum3=0
-    markers = [-2]*len(list1)
+def cumulative_sum_with_limit(list1, list2, list3, l1=1, l2=1, l3=5, new_segment_marker=-1, min_consec=10):
+    cum_sum1 = 0
+    cum_sum2 = 0
+    cum_sum3 = 0
+    markers = [-2] * len(list1)
+    consec_count = 0
     for i in range(len(list1)):
         cum_sum1 += list1[i]
         if cum_sum1 > l1:
-            markers[i]=new_segment_marker
+            consec_count += 1
+        
+        if consec_count >= min_consec:
+            markers[i] = new_segment_marker
+            consec_count = 0
             cum_sum1=0
             cum_sum2=0
             cum_sum3=0
+
         cum_sum2 += list2[i]
         if cum_sum2 > l2:
-            markers[i]=new_segment_marker
+            consec_count += 1
+        
+        if consec_count >= min_consec:
+            markers[i] = new_segment_marker
+            consec_count = 0
             cum_sum1=0
             cum_sum2=0
             cum_sum3=0
+
         cum_sum3 += list3[i]
         if cum_sum3 > l3:
-            markers[i]=new_segment_marker
+            consec_count += 1
+        
+        if consec_count >= min_consec:
+            markers[i] = new_segment_marker
+            consec_count = 0
             cum_sum1=0
             cum_sum2=0
             cum_sum3=0
@@ -173,6 +188,7 @@ def create_segmentDF_fromDF(TDF2,variables='all'):
         SDF2 = TDF2.groupby('segments').mean()
     else:
         SDF2 = TDF2[variables].groupby('segments').mean()
+    SDF2['segments']=np.unique(TDF2['segments'].tolist())
     return SDF2
 def find_distance(df):
     '''

@@ -16,12 +16,13 @@ Show_Plot=True
 coursename = "data/221005_eksempelsegment001.xlsx" # Short, but with a lot of data
 parquetfile='data/2022-06-05-12-12-09 (1).parquet' # Longer, from strava
 ownfile='data/Evening_Run.fit'
+lotta='data/Klassisk.fit'
 variables = ['position_lat', 'position_long', 'altitude','distance']
-# TDF=fit_records_to_frame(ownfile,variables)
-# TDF0=DF_to_segmented_DF(TDF[['position_lat','position_long','altitude']].dropna()
-# ,Weird_format=True)#.iloc[0:300]
+TDF=fit_records_to_frame(lotta,variables)
+TDF0=DF_to_segmented_DF(TDF[['position_lat','position_long','altitude']].dropna()
+,Weird_format=True)#.iloc[0:300]
 # TDF0 = DF_to_segmented_DF(pd.read_excel(coursename),Weird_format=True)
-TDF0=DF_to_segmented_DF(pd.read_parquet(parquetfile)).iloc[0:200]
+# TDF0=DF_to_segmented_DF(pd.read_parquet(parquetfile)).iloc[0:200]
 
 # Read data
 curvature= [0]*(TDF0['segments'].iloc[-1]+1)
@@ -33,7 +34,6 @@ for i in range(TDF0['segments'].iloc[-1]+1):
     curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)
     if abs(curvature[i])<1:
         curvature[i]=0
-    
     climb[i]=calculate_height_gained(segment)
     if abs(climb[i])<1:
         climb[i]=0
