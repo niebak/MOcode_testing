@@ -5,6 +5,7 @@ from code_functions import *
 coursename = "data/221005_eksempelsegment001.xlsx" # Short, but with a lot of data
 
 TDF0=DF_to_segmented_DF(pd.read_excel(coursename),Weird_format=True)
+print(TDF0)
 FDF0=segments_to_feature_df(TDF0)
 print(FDF0)
 classify_feature_df(FDF0)

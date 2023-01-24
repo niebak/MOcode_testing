@@ -282,20 +282,24 @@ def add_velocity_column(df,inplace=True,add_time=False):
         return velocity
 def segments_to_feature_df(TDF0):
     '''
-    Goes from a segmented df to a feature df, which is only segments and their features
+    Goes from a segmented df to a feature df, which is only segments and their features.
+    Curvature, Climb, and Distance travelled in the segment.
     '''
     curvature= [0]*(TDF0['segments'].iloc[-1]+1)
     climb = [0]*(TDF0['segments'].iloc[-1]+1)
     seg_dist = [0]*(TDF0['segments'].iloc[-1]+1)
 
-    for i in range(TDF0['segments'].iloc[-1]+1):
+    for i in range(TDF0['segments'].iloc[-1]+1): # Loop through each segment
         segment = TDF0.loc[TDF0["segments"]==i]
-        curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)
+        # find the curvature as a distance from a straight line
+        curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)  
         if abs(curvature[i])<1:
             curvature[i]=0
+        # Find the altitude difference
         climb[i]=calculate_height_gained(segment)
         if abs(climb[i])<1:
             climb[i]=0
+        # find the distance
         seg_dist[i]=find_distance(segment)
     featdict={'curvature':curvature,'climb':climb,'seg_distance':seg_dist}
     featureDF=pd.DataFrame(featdict)
