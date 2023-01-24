@@ -288,7 +288,7 @@ def segments_to_feature_df(TDF0):
     curvature= [0]*(TDF0['segments'].iloc[-1]+1)
     climb = [0]*(TDF0['segments'].iloc[-1]+1)
     seg_dist = [0]*(TDF0['segments'].iloc[-1]+1)
-
+    segments = TDF0['segments'].tolist()
     for i in range(TDF0['segments'].iloc[-1]+1): # Loop through each segment
         segment = TDF0.loc[TDF0["segments"]==i]
         # find the curvature as a distance from a straight line
@@ -301,7 +301,7 @@ def segments_to_feature_df(TDF0):
             climb[i]=0
         # find the distance
         seg_dist[i]=find_distance(segment)
-    featdict={'curvature':curvature,'climb':climb,'seg_distance':seg_dist}
+    featdict={'segments':np.unique(segments),'curvature':curvature,'climb':climb,'seg_distance':seg_dist}
     featureDF=pd.DataFrame(featdict)
     return featureDF
 def classify_feature_df(featureDF,curve_lim=1,climb_lim=3,inplace=True):
@@ -323,13 +323,32 @@ def classify_feature_df(featureDF,curve_lim=1,climb_lim=3,inplace=True):
             Segment_Class[segment]='straight'
         if curve<-curve_lim:
             Segment_Class[segment]='L turn'
-        if climb>=climb_lim:
-            Segment_Class[segment]+=(' incline')
-        if climb<=-climb_lim:
-            Segment_Class[segment]+=(' decline')
+        # if climb>=climb_lim:
+        #     Segment_Class[segment]+=(' incline')
+        # if climb<=-climb_lim:
+        #     Segment_Class[segment]+=(' decline')
         if Segment_Class[segment] == '':
             Segment_Class[segment] = 'Unknown class'
     if inplace:
         featureDF['class']=Segment_Class
     else:
         return Segment_Class
+def df_curve_to_signal_rep(df):
+    '''
+    Might be used in frequency analysis, but we'll see. returns a vector of magnitudes.
+    '''
+    if 'datetime' not in globals():
+        import datetime
+    x1, y1 = df.iloc[0]['position_long'], df.iloc[0]['position_lat']
+    x2, y2 = df.iloc[-1]['position_long'], df.iloc[-1]['position_lat']
+    m = (y2 - y1) / (x2 - x1)
+    c = y1 - (m * x1)
+    distance = []
+    for i in range(len(df)):
+        x,y = df.iloc[i]['position_long'], df.iloc[i]['position_lat']
+        distance.append((y - (m * x + c)))
+    time = (df['timestamp'].diff().tolist())
+    if any(isinstance(i, datetime.timedelta) for i in time):
+        time = (df['timestamp'].diff().dt.total_seconds().cumsum().tolist())
+    return distance,np.nan_to_num(time)
+
