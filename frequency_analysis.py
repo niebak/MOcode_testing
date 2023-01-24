@@ -32,7 +32,7 @@ def extract_frequencies_time(magnitudes, time):
 # TDF0=DF_to_segmented_DF(pd.read_excel('data/221005_eksempelsegment001.xlsx'),Weird_format=True)
 TDF0=DF_to_segmented_DF(pd.read_parquet('data/2022-06-05-12-12-09 (1).parquet'))#.iloc[:500])
 # print(SDF0)
-def frequency_analysis(TDF0,inplace=True):
+def frequency_analysis(TDF0):
     '''
     Does some Fourier analysis and returns the maximum value and its frequency.
     Works on RAW TRAILS, but returns SEGMENT DATAFRAME.
@@ -60,9 +60,9 @@ def frequency_analysis(TDF0,inplace=True):
         amps[i]= max(fourier)
         freqs[i] = frequencies[np.argmax(fourier)]
         # print(i,round(frequencies[np.argmax(fourier)]*10**3,3),SDF0['class'].iloc[i])
-    if inplace:
-        SDF0['freq_amplitude']=amps
-        SDF0['freq']=freqs
+
+    SDF0['freq_amplitude']=amps
+    SDF0['freq']=freqs
     return SDF0
 SDF0=frequency_analysis(TDF0)
 fig = plt.figure()
