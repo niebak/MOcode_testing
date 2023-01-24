@@ -351,4 +351,54 @@ def df_curve_to_signal_rep(df):
     if any(isinstance(i, datetime.timedelta) for i in time):
         time = (df['timestamp'].diff().dt.total_seconds().cumsum().tolist())
     return distance,np.nan_to_num(time)
+def frequency_analysis(TDF0):
+    '''
+    Does some Fourier analysis and returns the maximum value and its frequency.
+    Works on RAW TRAILS, but returns SEGMENT DATAFRAME.
+    '''
+    if 'timestamp' not in TDF0.columns:
+        pp_time = [0]*TDF0.shape[0]
+        pp_distance=TDF0['distance'].diff()
+        for i in range(0,TDF0.shape[0]):
+            pp_time[i] = pp_distance[i]/TDF0['velocity [m/s]'].iloc[i]
+        pp_time[0]=0
+        timestamp = np.cumsum(pp_time)
+        TDF0['pp_time'] = pp_time
+        TDF0['timestamp']=timestamp
+    SDF0=(segments_to_feature_df(TDF0))
+    classify_feature_df(SDF0) 
+    segments = TDF0['segments'].tolist()
+    amps=[0]*(segments[-1]+1)
+    freqs=[0]*(segments[-1]+1)
+    for i in range(segments[-1]+1):
+        segment = TDF0.loc[TDF0['segments']==i]
+        signal,time = df_curve_to_signal_rep(segment)
+        fourier = np.delete(fourier_transform(signal),0)
+        frequencies = np.delete(extract_frequencies_time(signal, time),0)
+        amps[i]= max(fourier)
+        freqs[i] = frequencies[np.argmax(fourier)]
 
+    SDF0['freq_amplitude']=amps
+    SDF0['freq']=freqs
+    return SDF0
+def extract_frequencies_time(magnitudes, time):
+    from scipy.fftpack import fft,fftfreq
+    fourier = fourier_transform(magnitudes)
+    # Number of samples in the original signal
+    N = len(magnitudes)
+    # Time duration of the signal
+    T = np.cumsum(time)[len(time)-1]
+    # Sample rate
+    sample_rate = N / T
+    # Extract the frequencies
+    frequencies = np.fft.fftfreq(N, d=1/sample_rate)
+    return frequencies
+def fourier_transform(magnitudes):
+    from scipy.fftpack import fft
+    # Convert the input list to a numpy array
+    data = np.array(magnitudes)
+
+    # Perform Fourier Transform on the data
+    fourier = np.abs(fft(data))
+
+    return fourier
