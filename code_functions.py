@@ -232,7 +232,10 @@ def calculate_distance_from_straight_line(df):
     '''
     x1, y1 = df.iloc[0]['position_long'], df.iloc[0]['position_lat']
     x2, y2 = df.iloc[-1]['position_long'], df.iloc[-1]['position_lat']
-    m = (y2 - y1) / (x2 - x1)
+    if (x2-x1) != 0:
+        m = (y2 - y1) / (x2 - x1)
+    else:
+        m = 0
     c = y1 - (m * x1)
     distance = []
     for i in range(len(df)):
