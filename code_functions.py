@@ -155,17 +155,18 @@ def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
     frame.drop(droplist, axis=1, inplace=True)
     frame = frame.assign(timestamp=pd.Series(time[:i+1]).values)
     return frame
-def DF_to_segmented_DF(DF,Weird_format=False):
+def DF_to_segmented_DF(DF,threshold=10):
     '''
     Assumes that the dataframe has position_lat, position_long, and altitude.
     Uses detect and mark change
     '''
     TDF0 = DF.copy()
-    if Weird_format:
+    limits=[180,90] # lat and lon are within these limits(+-)
+    if max(TDF0['position_lat'].values)>limits[0]:
         # If the data comes from strava/garmin it is in a weird format
         TDF0['position_lat'] = TDF0['position_lat']/(2**32/360)
         TDF0['position_long'] = TDF0['position_long']/(2**32/360)
-       
+        print(f'\nAltered the trail so that it is in lat/long __POSSIBLY__\n')  
     if 'distance' not in TDF0.columns:
         TDF0=cum_haversine_distance(TDF0)
     # Create the vector-representation coordinates
@@ -173,7 +174,8 @@ def DF_to_segmented_DF(DF,Weird_format=False):
     TDF0_seg_marker=detect_and_mark_change_in_direction(
         TDF0_vector['Vposition_lat'].tolist(),
         TDF0_vector['Vposition_long'].tolist(),
-        TDF0_vector['Valtitude'].tolist())
+        TDF0_vector['Valtitude'].tolist(),
+        threshold=threshold)
     TDF0_seg =  marker_to_segment(TDF0_seg_marker, initial_segment=0)
     TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
     TDF0['segments']=TDF0_seg
@@ -184,6 +186,11 @@ def DF_to_segmented_DF(DF,Weird_format=False):
     if 'speed' in TDF0.columns:
         TDF0.rename(columns={'speed':'velocity [m/s]'},inplace=True)
         print('Renamed "speed" to "velocity [m/s]"')
+     # Check only the last segment
+    last_segment = TDF0.loc[TDF0["segments"]== TDF0['segments'].iloc[-1]]
+    if len(last_segment) < threshold:
+        # Merge the last segment with the previous segment
+        TDF0.loc[TDF0["segments"] == TDF0['segments'].iloc[-1], "segments"] = TDF0['segments'].iloc[-1]-1
     return TDF0
 def create_segmentDF_fromDF(TDF2,variables='all'):
     '''
@@ -405,3 +412,71 @@ def fourier_transform(magnitudes):
     fourier = np.abs(fft(data))
 
     return fourier
+def add_to_database(TDF0,databasename='data/TrackDataBaseNB.parquet'):
+    '''
+    Add a dataframe to a database. Assume the database Ive created earlier.
+    doesnt return anything, and doesnt add duplicates. creates a new DB on prompt if no database is found
+    '''
+    if 'tabulate' not in globals():
+        from tabulate import tabulate
+    # Either read or create database and add the track to it:
+    if databaseexists:
+        DBDF=pd.read_parquet(databasename)
+        print('Found Database')
+        LatestTrackName=DBDF['name'].iloc[DBDF.shape[0]-1]
+        NewTrackNameVal=LatestTrackName+1
+        FlagForDupes=0# zero if the track is already in the database
+        # Check if the course is in any of the known courses
+        addedname=[NewTrackNameVal]*TDF0.shape[0]
+        TDF0['name']=addedname
+        DFtoadd=TDF0[['name','position_lat','position_long','altitude']]
+        for i in range(0,LatestTrackName+1):# Since it is non-inlcusive, we need to run to one more
+            TrackCheck=DBDF.loc[DBDF['name']==i]
+        #     print(tabulate(LatestTrack.iloc[0:10], headers = 'keys', tablefmt = 'github'))
+            print(f'looking at track {i}')
+            newlat=list(DFtoadd['position_lat'])
+            oldlat=list(TrackCheck['position_lat'])
+            newlong=list(DFtoadd['position_long'])
+            oldlong=list(TrackCheck['position_long'])
+            if(newlat==oldlat)and(newlong==oldlong):# Check if the coordinates are already present
+                print(f'The provided track is already in the database as track {i}! please choose another, or remove the old one')
+                FlagForDupes=1
+        if not(FlagForDupes):# Runs if the dupe flag isnt set
+            #i.e. runs if the track should be added to the database
+            print('should print')
+            DBDF=pd.concat([DBDF,DFtoadd])
+            DBDF.to_parquet(databasename)
+    else:
+        print('Failed to find database.')
+        ans=input('Should we create a new one?\n y/n\n')
+        if ans=='y':
+            print('Creating a new database')
+            DBDF=pd.DataFrame()
+            TDF1=DFtoadd
+            trackname=[0]*TDF1.shape[0]
+            TDF1['name']=trackname
+            DBDF=TDF1[['name','position_lat','position_long','altitude']]
+            databaseexists=True
+            print(tabulate(DBDF.iloc[0:10], headers = 'keys', tablefmt = 'github'))
+            DBDF.to_parquet(databasename)
+        else:
+            print('Wont create new database.\nPlease add database file to the path.')
+def find_matching_trails(df, segments, percent_diff):
+    '''
+    This works as a prototype filter, although it has to be expanded upon ion order to work on the database.
+    Steps to be done:
+    1. expand use to database insead of dataframe
+    1.1 can be done by having the functino return true/false and apply to each track
+    2. create a system that returns a set amount of trail, i.e. the top X% where the X is moved automatically.
+    '''
+    # Create a subset of the dataframe that contains the segments within the range and percentage difference
+    subset = df[(df['class'] == segments['class']) & 
+                (df['curvature'] >= segments['curvature']*(1-percent_diff/100)) & (df['curvature'] <= segments['curvature']*(1+percent_diff/100)) &
+                (df['climb'] >= segments['climb']*(1-percent_diff/100)) & (df['climb'] <= segments['climb']*(1+percent_diff/100)) &
+                (df['seg_distance'] >= segments['seg_distance']*(1-percent_diff/100)) & (df['seg_distance'] <= segments['seg_distance']*(1+percent_diff/100))]
+
+    # Group the data by trail name
+    grouped_data = subset.groupby("name")
+
+    # Now you can access the trails that have segments that fall within the given range
+    return grouped_data
