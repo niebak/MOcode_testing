@@ -181,11 +181,19 @@ def DF_to_segmented_DF(DF,threshold=10):
     TDF0['segments']=TDF0_seg
     if 'timestamp' in TDF0.columns:
         add_velocity_column(TDF0)
+        TDF0['seconds'] = TDF0['timestamp'].diff()
     else:
         print('Have not added velocity column to Dataframe, errors might come as a result of this')
+    if 'timestamp' not in TDF0.columns and 'speed' in TDF0.columns:
+        from datetime import datetime,timedelta
+        TDF0['seconds'] = (TDF0['distance'].diff()/TDF0['speed']).cumsum()
+        TDF0['seconds'].iloc[0]=0
+        TDF0['timestamp'] = TDF0.apply(lambda row: datetime.utcfromtimestamp(row['seconds']), axis=1)
+        print('Added timestamp, will lack date and year')
     if 'speed' in TDF0.columns:
         TDF0.rename(columns={'speed':'velocity [m/s]'},inplace=True)
         print('Renamed "speed" to "velocity [m/s]"')
+    
      # Check only the last segment
     last_segment = TDF0.loc[TDF0["segments"]== TDF0['segments'].iloc[-1]]
     if len(last_segment) < threshold:
@@ -412,7 +420,7 @@ def fourier_transform(magnitudes):
     fourier = np.abs(fft(data))
 
     return fourier
-def add_to_database(TDF2,databasename='data/TrackDataBaseNB.parquet',variables=['position_lat','position_long','altitude']):
+def add_to_database(TDF2,databasename='data/TrackDataBaseNB.parquet',variables=['timestamp','position_lat','position_long','altitude','segments','velocity [m/s]']):
     '''
     Add a dataframe to a database. Assume the database Ive created earlier.
     doesnt return anything, and doesnt add duplicates. creates a new DB on prompt if no database is found
