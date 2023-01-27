@@ -14,22 +14,22 @@ Columns=['position_lat','position_long','altitude']
 
 # Read data
 TDF0=pd.read_excel(coursename)[Columns]
-print(TDF0.columns)
+print(type(TDF0.values))
 TDF1=pd.read_parquet(parquetfile)[Columns]
-print(TDF1.columns)
+# print(TDF1.values)
 distance = dtw(TDF0.values, TDF1.values)
 
-distance.plot()
+# distance.plot()
 
-fig=plt.figure()
-ax=fig.add_subplot(1,1,1)
+# fig=plt.figure()
+# ax=fig.add_subplot(1,1,1)
 # ax.plot(distance.index1,distance.index2)
 # plt.show()
 
-ldist = np.ones((6,6))                    # Matrix of ones
-ldist[1,:] = 0; ldist[:,4] = 0           # Mark a clear path of zeroes
-ldist[1,4] = .01
+# ldist = np.ones((6,6))                    # Matrix of ones
+# ldist[1,:] = 0; ldist[:,4] = 0           # Mark a clear path of zeroes
+# ldist[1,4] = .01
 
-ds = dtw(ldist)
-ax.plot(ds.index1,ds.index2)
-plt.show()
+# ds = dtw(ldist)
+# ax.plot(ds.index1,ds.index2)
+# plt.show()
