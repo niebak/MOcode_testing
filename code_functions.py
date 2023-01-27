@@ -412,53 +412,69 @@ def fourier_transform(magnitudes):
     fourier = np.abs(fft(data))
 
     return fourier
-def add_to_database(TDF0,databasename='data/TrackDataBaseNB.parquet'):
+def add_to_database(TDF0,databasename='data/TrackDataBaseNB.parquet',variables=['position_lat','position_long','altitude']):
     '''
     Add a dataframe to a database. Assume the database Ive created earlier.
     doesnt return anything, and doesnt add duplicates. creates a new DB on prompt if no database is found
     '''
-    if 'tabulate' not in globals():
-        from tabulate import tabulate
+    try:
+         tabulate
+    except NameError:
+        import tabulate
+    try:
+        os
+    except NameError:
+        import os
     # Either read or create database and add the track to it:
+    databaseexists = os.path.exists(databasename)
     if databaseexists:
-        DBDF=pd.read_parquet(databasename)
+        if '.xlsx' in databasename:
+            DBDF = pd.read_excel(databasename)
+        if '.parquet' in databasename:
+            DBDF = pd.read_parquet(databasename)
         print('Found Database')
         LatestTrackName=DBDF['name'].iloc[DBDF.shape[0]-1]
         NewTrackNameVal=LatestTrackName+1
-        FlagForDupes=0# zero if the track is already in the database
+        FlagForDupes=False# zero if the track is already in the database
         # Check if the course is in any of the known courses
         addedname=[NewTrackNameVal]*TDF0.shape[0]
         TDF0['name']=addedname
-        DFtoadd=TDF0[['name','position_lat','position_long','altitude']]
+        variables.append('name')
+        DFtoadd=TDF0[variables]
         for i in range(0,LatestTrackName+1):# Since it is non-inlcusive, we need to run to one more
             TrackCheck=DBDF.loc[DBDF['name']==i]
         #     print(tabulate(LatestTrack.iloc[0:10], headers = 'keys', tablefmt = 'github'))
             print(f'looking at track {i}')
-            newlat=list(DFtoadd['position_lat'])
-            oldlat=list(TrackCheck['position_lat'])
-            newlong=list(DFtoadd['position_long'])
-            oldlong=list(TrackCheck['position_long'])
-            if(newlat==oldlat)and(newlong==oldlong):# Check if the coordinates are already present
-                print(f'The provided track is already in the database as track {i}! please choose another, or remove the old one')
-                FlagForDupes=1
-        if not(FlagForDupes):# Runs if the dupe flag isnt set
-            #i.e. runs if the track should be added to the database
-            print('should print')
-            DBDF=pd.concat([DBDF,DFtoadd])
-            DBDF.to_parquet(databasename)
+            mask = np.isclose(DFtoadd['position_lat'],TrackCheck['position_lat'],rtol=0.01)
+            print(mask.all())
+            FlagForDupes=mask.all()
+            if not(FlagForDupes):# Runs if the dupe flag isnt set
+                #i.e. runs if the track should be added to the database
+                DBDF=pd.concat([DBDF,DFtoadd],ignore_index=True)
+            else:
+                print(f'The track is already present, as track {i}.\n')
+            if '.xlsx' in databasename:
+                DBDF.to_excel(databasename)
+            if '.parquet' in databasename:
+                DBDF.to_parquet(databasename)
     else:
         print('Failed to find database.')
         ans=input('Should we create a new one?\n y/n\n')
+        DFtoadd=TDF0[variables]
         if ans=='y':
             print('Creating a new database')
             DBDF=pd.DataFrame()
             TDF1=DFtoadd
             trackname=[0]*TDF1.shape[0]
             TDF1['name']=trackname
-            DBDF=TDF1[['name','position_lat','position_long','altitude']]
+            variables.append('name')
+            DBDF=TDF1[variables]
             databaseexists=True
-            print(tabulate(DBDF.iloc[0:10], headers = 'keys', tablefmt = 'github'))
-            DBDF.to_parquet(databasename)
+            print(tabulate.tabulate(DBDF.iloc[0:10], headers = 'keys', tablefmt = 'github'))
+            if '.xlsx' in databasename:
+                DBDF.to_excel(databasename)
+            if '.parquet' in databasename:
+                DBDF.to_parquet(databasename)
         else:
             print('Wont create new database.\nPlease add database file to the path.')
 def find_matching_trails(df, segments, percent_diff):
