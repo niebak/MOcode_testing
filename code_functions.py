@@ -309,16 +309,19 @@ def segments_to_feature_df(TDF0):
     segments = TDF0['segments'].tolist()
     for i in range(TDF0['segments'].iloc[-1]+1): # Loop through each segment
         segment = TDF0.loc[TDF0["segments"]==i]
-        # find the curvature as a distance from a straight line
-        curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)  
-        if abs(curvature[i])<1:
-            curvature[i]=0
-        # Find the altitude difference
-        climb[i]=calculate_height_gained(segment)
-        if abs(climb[i])<1:
-            climb[i]=0
-        # find the distance
-        seg_dist[i]=find_distance(segment)
+        if segment.shape[0]==0:
+            print(f'problem at index {i}, do some troubleshooting.')
+        else:
+            # find the curvature as a distance from a straight line
+            curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)  
+            if abs(curvature[i])<1:
+                curvature[i]=0
+            # Find the altitude difference
+            climb[i]=calculate_height_gained(segment)
+            if abs(climb[i])<1:
+                climb[i]=0
+            # find the distance
+            seg_dist[i]=find_distance(segment)
     featdict={'segments':np.unique(segments),'curvature':curvature,'climb':climb,'seg_distance':seg_dist}
     featureDF=pd.DataFrame(featdict)
     return featureDF
@@ -341,10 +344,10 @@ def classify_feature_df(featureDF,curve_lim=1,climb_lim=3,inplace=True):
             Segment_Class[segment]='straight'
         if curve<-curve_lim:
             Segment_Class[segment]='L turn'
-        # if climb>=climb_lim:
-        #     Segment_Class[segment]+=(' incline')
-        # if climb<=-climb_lim:
-        #     Segment_Class[segment]+=(' decline')
+        if climb>=climb_lim:
+            Segment_Class[segment]+=(' incline')
+        if climb<=-climb_lim:
+            Segment_Class[segment]+=(' decline')
         if Segment_Class[segment] == '':
             Segment_Class[segment] = 'Unknown class'
     if inplace:
@@ -510,3 +513,27 @@ def find_matching_trails(df, segments, percent_diff):
 
     # Now you can access the trails that have segments that fall within the given range
     return grouped_data
+def segments_to_feature_df_with_rev(TDF0):
+    '''
+    Goes from a segmented df to a feature df, which is only segments and their features.
+    Curvature, Climb, and Distance travelled in the segment.
+    '''
+    curvature= [0]*(TDF0['segments'].iloc[-1]+1)
+    climb = [0]*(TDF0['segments'].iloc[-1]+1)
+    seg_dist = [0]*(TDF0['segments'].iloc[-1]+1)
+    segments = TDF0['segments'].tolist()
+    for i in range(TDF0['segments'].iloc[-1]+1): # Loop through each segment
+        segment = TDF0.loc[TDF0["segments"]==i]
+        # find the curvature as a distance from a straight line
+        curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)  
+        if abs(curvature[i])<1:
+            curvature[i]=0
+        # Find the altitude difference
+        climb[i]=calculate_height_gained(segment)
+        if abs(climb[i])<1:
+            climb[i]=0
+        # find the distance
+        seg_dist[i]=find_distance(segment)
+    featdict={'segments':np.unique(segments),'curvature':curvature,'revcurvature':[i * -1 for i in curvature],'climb':climb,'revclimb':[i * -1 for i in climb],'seg_distance':seg_dist}
+    featureDF=pd.DataFrame(featdict)
+    return featureDF
