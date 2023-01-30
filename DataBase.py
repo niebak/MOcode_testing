@@ -48,12 +48,17 @@ for i in range(0,DB['name'].values[-1]+1):
     print(i,cost)
 print(tabulate(FDB,headers='keys',tablefmt='github'))
 
-def add_to_database(TDF0,databasename='data/TrackDataBaseNB.parquet'):
+
+
+def add_to_database(TDF0,databasename='data/TrackDataBaseNB.parquet',variables=['name','position_lat','position_long','altitude']):
     '''
     Add a dataframe to a database. Assume the database Ive created earlier.
     doesnt return anything, and doesnt add duplicates. creates a new DB on prompt if no database is found
     '''
+    if 'os' not in globals():
+        import os
     # Either read or create database and add the track to it:
+    databaseexists = os.path.exists(databasename)
     if databaseexists:
         DBDF=pd.read_parquet(databasename)
         print('Found Database')
@@ -63,7 +68,7 @@ def add_to_database(TDF0,databasename='data/TrackDataBaseNB.parquet'):
         # Check if the course is in any of the known courses
         addedname=[NewTrackNameVal]*TDF0.shape[0]
         TDF0['name']=addedname
-        DFtoadd=TDF0[['name','position_lat','position_long','altitude']]
+        DFtoadd=TDF0[variables]
         for i in range(0,LatestTrackName+1):# Since it is non-inlcusive, we need to run to one more
             TrackCheck=DBDF.loc[DBDF['name']==i]
         #     print(tabulate(LatestTrack.iloc[0:10], headers = 'keys', tablefmt = 'github'))
