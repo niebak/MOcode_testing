@@ -1,34 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tabulate import tabulate 
-import pandas as pd
-import sys
-sys.path.append('../DIVCODE')
-from code_functions import *
-from sklearn.cluster import KMeans,DBSCAN
-import os
-# To limit memory leak, will result in a higher runtime when doing Kmeans
-os.environ["OMP_NUM_THREADS"] = "1"
-# defines
-Verbose=False
-Show_Plot=True
 
-DataBase_name = 'data/BTDNB'
-DataBase_file = DataBase_name + ('.xlsx')
-DataBase_note = DataBase_name + ('.txt')
+def logistic_function(x, x0=0, k=0.001):
+    return -200 * (1 / (1 + np.exp(-k * (x - x0))))+200
+def reverse_sigmoid(x, x0=0, k=0.005):
+    return 2/(1+np.exp(-x*k))
+def tanh(x,k=1):
+    upper = np.exp(x*k)-np.exp(-x*k)
+    lower = np.exp(x*k)+np.exp(-x*k)
+    return upper/lower
 
-trailfile = 'data/2022-06-05-12-12-09 (1).parquet'
-trailfile1 = 'data/221005_eksempelsegment001.xlsx'
-trailfile2= 'data/Evening_Run.fit'
-trailfile3 = 'data/Klassisk.fit'
+K=10
+x=np.linspace(0,K,101)
 
-columns = ['timestamp','seconds','position_lat','position_long','altitude','segments','velocity [m/s]']
-df0 = DF_to_segmented_DF(pd.read_parquet(trailfile))
-df1 = DF_to_segmented_DF(pd.read_excel(trailfile1))
-df2 = DF_to_segmented_DF(fit_records_to_frame(trailfile2,vars=columns))
-print(df2.columns)
-# # df3 = DF_to_segmented_DF(fit_records_to_frame(trailfile3))
+y=(1-tanh(x,k=1/(0.3*K)))*100
 
-add_to_database(df0,databasename=DataBase_file,variables=columns)
-add_to_database(df1,databasename=DataBase_file,variables=columns)
-add_to_database(df2,databasename=DataBase_file,variables=columns)
+fig=plt.figure()
+ax0=fig.add_subplot(1,1,1)
+ax0.plot(x,y)
+ax0.grid()
+plt.show()

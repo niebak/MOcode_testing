@@ -460,11 +460,11 @@ def add_to_database(TDF2,databasename='data/TrackDataBaseNB.parquet',variables=[
             TrackCheck=DBDF.loc[DBDF['name']==i]
         #     print(tabulate(LatestTrack.iloc[0:10], headers = 'keys', tablefmt = 'github'))
             print(f'looking at track {i}')
-            if (DFtoadd.shape[0]==TrackCheck.shape[0]) and ('feature' not in databasename) :
-                mask = np.isclose(DFtoadd['position_lat'],TrackCheck['position_lat'],rtol=0.01)
-                FlagForDupes=mask.all()
-                print(f'The track is already present, as track {i}.\n')
-                break
+            # if (DFtoadd.shape[0]==TrackCheck.shape[0]) and ('feature' not in databasename) :
+            #     mask = np.isclose(DFtoadd['position_lat'],TrackCheck['position_lat'],rtol=0.001)
+            #     FlagForDupes=mask.all()
+            #     print(f'The track is already present, as track {i}.\n')
+            #     break
         if not(FlagForDupes):# Runs if the dupe flag isnt set
             #i.e. runs if the track should be added to the database
             # print(DBDF.columns)

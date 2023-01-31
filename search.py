@@ -72,3 +72,7 @@ def Dist(course1,course2,where,f1='f1',f2='f2',f3='f3',rf1='rf1',rf2='rf2',rf3='
     
     d=np.sqrt(abs(w[0]*d1+w[1]*d2+w[2]*d3))
     return d
+def tanh(x,k=1):
+    upper = np.exp(x*k)-np.exp(-x*k)
+    lower = np.exp(x*k)+np.exp(-x*k)
+    return upper/lower
