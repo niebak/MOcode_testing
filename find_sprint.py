@@ -10,7 +10,19 @@ def print_df(df,headers='keys',tablefmt='github'):
     print('\n')
     print(tabulate(df.iloc[0:length], headers=headers, tablefmt=tablefmt))
     print('\n')
-
+def sliding_window_features(target,candidate,features=['curvature','climb','seg_distance']):
+    '''
+    Uses a sliding window to find the difference between the dataframes.
+    Returns a list of the difference between the dataframes, if the window starts at the index.
+    '''
+    window_size = target.shape[0]
+    # print('window size',window_size)
+    difference = [np.inf] * (candidate.shape[0] - window_size + 1)
+    target_values=target[features].to_numpy()
+    for i in range(0,len(difference)):
+        subset_candidate = candidate[features].iloc[i:i+window_size].to_numpy()
+        difference[i] = np.linalg.norm(target_values - subset_candidate)
+    return difference
 
 rawdatabase = 'LUW_example.xlsx'
 database = 'LUWfeature_example.xlsx'
@@ -33,6 +45,8 @@ num_of_trails = np.unique(DB['name'])[-1]+2
 print(num_of_trails)
 costs=[0]*num_of_trails
 paths=[0]*num_of_trails
+sliw_window_costs=[0]*num_of_trails
+sliw_window_paths=[0]*num_of_trails
 
 k=Target.shape[0]
 ax0s=[]
@@ -55,6 +69,10 @@ for i in range(num_of_trails):
     score = 100*(1-tanh(cost, k=1/(0.09*k)))
     print(f'This is a match of {round(score,2)}% for trail {i}\n')
 
+    difference = sliding_window_features(Target_features,Candidate_features)
+    best_start = np.argmin(difference)
+    best_end = best_start + Target_features.shape[0]
+    best_segments = np.linspace(best_start,best_end-1,best_end-best_start)
     # ax0,ax1=plot_segments_and_trail(Candidate)
     # ax0.set_xlabel(i)
     # ax0s.append(ax0)
@@ -62,34 +80,37 @@ for i in range(num_of_trails):
 
     costs[i]=cost
     paths[i]=path
+    sliw_window_costs[i]=difference[best_start]
+    sliw_window_paths[i]=best_segments
+    print(best_segments)
 print('\nDone!\n')
 # print(costs)
 costs.pop(np.argmin(costs)) # This has to be removed, as the target is present in the database
-# costs.pop(np.argmin(costs)) # This has to be removed, as the target is present in the database
+costs.pop(np.argmin(costs)) # This has to be removed, as the target is present in the database
+sliw_window_costs.pop(np.argmin(sliw_window_costs)) # This has to be removed, as the target is present in the database
+sliw_window_costs.pop(np.argmin(sliw_window_costs)) # This has to be removed, as the target is present in the database
 best_candidate = np.argmin(costs)
 print(f'best trail is {best_candidate}, and the path through it is {paths[best_candidate]}, with a cost of {costs[best_candidate]}')
 features=['segments','curvature','seg_distance','climb']
 
-winner_segments=np.unique(paths[best_candidate])
-winner_raw = rawDB.loc[rawDB['name']==best_candidate].copy(deep=True)
-winner = winner_raw[winner_raw['segments'].isin(winner_segments)]
-winner.reset_index(drop=True,inplace=True)
-# print(winner)
-winner_features = segments_to_feature_df_with_rev(winner)
+
+sw_winner=np.argmin(sliw_window_costs)
+sw_segments = sliw_window_paths[sw_winner]
+print(f'According to sliding window it is {sw_winner}, and these segments: {sw_segments}.\n')
 
 complete_winner = rawDB.loc[rawDB['name']==best_candidate].copy(deep=True)
 # print(complete_winner)
 winner_path = complete_winner.loc[complete_winner['segments'].isin(paths[best_candidate])].copy(deep=True)
 winner_path.reset_index(drop=True,inplace=True)
 
-winner = DF_to_segmented_DF(winner)
-winner_feature=segments_to_feature_df(winner) 
-classify_feature_df(winner_feature)
+sw_complete_winner = rawDB.loc[rawDB['name']==sw_winner].copy(deep=True)
+# print(complete_winner)
+sw_winner_path = sw_complete_winner.loc[sw_complete_winner['segments'].isin(sw_segments)].copy(deep=True)
+sw_winner_path.reset_index(drop=True,inplace=True)
+
 
 Target_features = (segments_to_feature_df_with_rev(Target))
-print(paths[best_candidate])
-print(winner_features[features])
-print(Target_features[features])
+
 
 # print(winner_path)
 
@@ -97,4 +118,10 @@ ax00,ax01=plot_segments_and_trail(Target)
 ax01.legend()
 ax10,ax11=plot_segments_and_trail(winner_path)
 ax11.legend()
-plt.show()
+ax20,ax21=plot_segments_and_trail(sw_winner_path)
+ax21.legend()
+# plt.show()
+
+print(tabulate(segments_to_feature_df_with_rev(Target),headers='keys',tablefmt='github'))
+print(tabulate(segments_to_feature_df_with_rev(winner_path),headers='keys',tablefmt='github'))
+print(tabulate(segments_to_feature_df_with_rev(sw_winner_path),headers='keys',tablefmt='github'))
