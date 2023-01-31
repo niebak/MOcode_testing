@@ -518,12 +518,13 @@ def segments_to_feature_df_with_rev(TDF0):
     Goes from a segmented df to a feature df, which is only segments and their features.
     Curvature, Climb, and Distance travelled in the segment.
     '''
-    curvature= [0]*(TDF0['segments'].iloc[-1]+1)
-    climb = [0]*(TDF0['segments'].iloc[-1]+1)
-    seg_dist = [0]*(TDF0['segments'].iloc[-1]+1)
-    segments = TDF0['segments'].tolist()
-    for i in range(TDF0['segments'].iloc[-1]+1): # Loop through each segment
-        segment = TDF0.loc[TDF0["segments"]==i]
+    segments = np.unique(TDF0['segments'].tolist())
+    curvature= [0]*(len(segments))
+    climb = [0]*(len(segments))
+    seg_dist = [0]*(len(segments))
+    for i in range(len(np.unique(segments))): # Loop through each segment
+        seg = segments[i]
+        segment = TDF0.loc[TDF0["segments"]==seg]
         # find the curvature as a distance from a straight line
         curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)  
         if abs(curvature[i])<1:
