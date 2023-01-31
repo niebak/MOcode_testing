@@ -527,7 +527,7 @@ def segments_to_feature_df_with_rev(TDF0):
         segment = TDF0.loc[TDF0["segments"]==seg]
         # find the curvature as a distance from a straight line
         curvature[i]=round(calculate_distance_from_straight_line(segment)*10**4,1)  
-        if abs(curvature[i])<1:
+        if abs(curvature[i])<0.01:
             curvature[i]=0
         # Find the altitude difference
         climb[i]=calculate_height_gained(segment)
