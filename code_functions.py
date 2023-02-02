@@ -1,10 +1,10 @@
-if 'pandas' not in globals():
-    import pandas as pd
-if 'matplotlib.pyplot' not in globals():
-    import matplotlib.pyplot as plt
-if 'numpy' not in globals():
-    import numpy as np
-from fitparse import FitFile
+# if 'pandas' not in globals():
+#     import pandas as pd
+# if 'matplotlib.pyplot' not in globals():
+#     import matplotlib.pyplot as plt
+# if 'numpy' not in globals():
+#     import numpy as np
+
 import os
 # To limit memory leak, will result in a higher runtime
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -24,11 +24,14 @@ def coordinate_to_vector_dataframe(TDF0,column1="position_lat",column2="position
     Takes as input a DF with coordinates and expresses the coordinates as a series of changes from the previous point.
     Returns a new DF with complete coordinates.
     '''
+    if 'pandas' not in globals():
+        import pandas as pd
     coordinates=TDF0[[column1,column2,column3]]
     VectorCoordinates=[coordinates.iloc[0].tolist()]*coordinates.shape[0]
     for point in range(0,coordinates.shape[0]-1):
         VectorCoordinates[point+1]=coordinate_to_vector(coordinates.iloc[point].tolist(),coordinates.iloc[point+1].tolist())
     VectorDataframe=pd.DataFrame(VectorCoordinates,columns=['Vposition_lat',"Vposition_long","Valtitude"])
+    VectorDataframe.iloc[0]=[0,0,0]
     return VectorDataframe
 def cumulative_sum_with_limit(list1, list2, list3, l1=1, l2=1, l3=5, new_segment_marker=-1, min_consec=10):
     cum_sum1 = 0
@@ -115,6 +118,8 @@ def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
     Returns two axessubplots. Can also plot the subplots directly with Show_Plot.
     Takes a dataframe, and can also be given what columns to plot.
     '''
+    if 'matplotlib.pyplot' not in globals():
+        import matplotlib.pyplot as plt
     fig = plt.figure()
     ax0=fig.add_subplot(2,1,1)
     segments=TDF0[segment_column].tolist()
@@ -139,6 +144,7 @@ def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
     kan hente ut. Standard tilsvarer 10 timer, som burde holde for de
     fleste .fit-filer.
     '''
+    from fitparse import FitFile
     if 'timestamp' in vars:
         vars.remove('timestamp')
     time = np.empty(max_samp, dtype='datetime64[s]')
@@ -160,7 +166,9 @@ def DF_to_segmented_DF(DF,threshold=10):
     Assumes that the dataframe has position_lat, position_long, and altitude.
     Uses detect and mark change
     '''
-    TDF0 = DF.copy()
+    if 'pandas' not in globals():
+        import pandas as pd
+    TDF0 = DF.copy(deep=True)
     limits=[180,90] # lat and lon are within these limits(+-)
     if max(TDF0['position_lat'].values)>limits[0]:
         # If the data comes from strava/garmin it is in a weird format
@@ -205,7 +213,8 @@ def create_segmentDF_fromDF(TDF2,variables='all'):
     Goes from a long dataframe to a dataframe defined as the mean of each segment representing each segment.
     Uses variables=['Vposition_lat','Vposition_long','Valtitude','segments'], and returns a dataframe
     '''
-    
+    if 'pandas' not in globals():
+        import pandas as pd
     if variables=='all':
         SDF2 = TDF2.groupby('segments').mean()
     else:
@@ -226,8 +235,10 @@ def calculate_curvature(dataframe):
     '''
     Works on segments. Assumes I have position_long and position_lat available. 
     Returns curvature over the __entire__ dataframe.
-     Change with Calsulate_distance_from_straight_line
+     Change with Calculate_distance_from_straight_line
     '''
+    if 'numpy' not in globals():
+        import numpy as np
     x = dataframe['position_long'].values
     y = dataframe['position_lat'].values
     dx = np.gradient(x)
@@ -245,6 +256,8 @@ def calculate_distance_from_straight_line(df):
     from its start to end point. Works on segments.
     Returns the mean.
     '''
+    if 'numpy' not in globals():
+        import numpy as np
     x1, y1 = df.iloc[0]['position_long'], df.iloc[0]['position_lat']
     x2, y2 = df.iloc[-1]['position_long'], df.iloc[-1]['position_lat']
     if (x2-x1) != 0:
@@ -303,6 +316,10 @@ def segments_to_feature_df(TDF0):
     Goes from a segmented df to a feature df, which is only segments and their features.
     Curvature, Climb, and Distance travelled in the segment.
     '''
+    if 'pandas' not in globals():
+        import pandas as pd
+    if 'numpy' not in globals():
+        import numpy as np
     curvature= [0]*(TDF0['segments'].iloc[-1]+1)
     climb = [0]*(TDF0['segments'].iloc[-1]+1)
     seg_dist = [0]*(TDF0['segments'].iloc[-1]+1)
@@ -360,6 +377,8 @@ def df_curve_to_signal_rep(df):
     '''
     if 'datetime' not in globals():
         import datetime
+    if 'numpy' not in globals():
+        import numpy as np
     x1, y1 = df.iloc[0]['position_long'], df.iloc[0]['position_lat']
     x2, y2 = df.iloc[-1]['position_long'], df.iloc[-1]['position_lat']
     m = (y2 - y1) / (x2 - x1)
@@ -377,6 +396,8 @@ def frequency_analysis(TDF0):
     Does some Fourier analysis and returns the maximum value and its frequency.
     Works on RAW TRAILS, but returns SEGMENT DATAFRAME.
     '''
+    if 'numpy' not in globals():
+        import numpy as np
     if 'timestamp' not in TDF0.columns:
         pp_time = [0]*TDF0.shape[0]
         pp_distance=TDF0['distance'].diff()
@@ -403,8 +424,7 @@ def frequency_analysis(TDF0):
     SDF0['freq']=freqs
     return SDF0
 def extract_frequencies_time(magnitudes, time):
-    from scipy.fftpack import fft,fftfreq
-    fourier = fourier_transform(magnitudes)
+    from scipy.fftpack import fft
     # Number of samples in the original signal
     N = len(magnitudes)
     # Time duration of the signal
@@ -416,6 +436,8 @@ def extract_frequencies_time(magnitudes, time):
     return frequencies
 def fourier_transform(magnitudes):
     from scipy.fftpack import fft
+    if 'numpy' not in globals():
+        import numpy as np
     # Convert the input list to a numpy array
     data = np.array(magnitudes)
 
@@ -518,6 +540,8 @@ def segments_to_feature_df_with_rev(TDF0):
     Goes from a segmented df to a feature df, which is only segments and their features.
     Curvature, Climb, and Distance travelled in the segment.
     '''
+    if 'numpy' not in globals():
+        import numpy as np
     segments = np.unique(TDF0['segments'].tolist())
     curvature= [0]*(len(segments))
     climb = [0]*(len(segments))
@@ -538,3 +562,13 @@ def segments_to_feature_df_with_rev(TDF0):
     featdict={'segments':np.unique(segments),'curvature':curvature,'revcurvature':[i * -1 for i in curvature],'climb':climb,'revclimb':[i * -1 for i in climb],'seg_distance':seg_dist}
     featureDF=pd.DataFrame(featdict)
     return featureDF
+def print_df(df,headers='keys',tablefmt='github'):
+    if 'tabulate' not in globals():
+        from tabulate import tabulate
+    if df.shape[0]<11:
+        length = df.shape[0]
+    else:
+        length=10
+    print('\n')
+    print(tabulate(df.iloc[0:length], headers=headers, tablefmt=tablefmt))
+    print('\n')
