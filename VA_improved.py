@@ -9,7 +9,7 @@ def ViterbiAlgorithm(C1,C0):
     source=C1
     target=C0
     # Some startup definitions
-    Target=C0.iloc[1]
+    Target=C0.iloc[0]
     Trans01,Route=Find_trans_matrix(C1,Target)
     # Initial position
     for s in range(len(source)):
@@ -70,14 +70,12 @@ def tanh(x,k=1):
     lower = np.exp(x*k)+np.exp(-x*k)
     return upper/lower
 def compare_dataframes(df1, df2):
-    differences = []
     if df1.shape != df2.shape:
         return 0
-    
+
+    differences = []
     for i in range(df1.shape[0]):
-        row_differences = []
-        for j in range(df1.shape[1]):
-            column_diff = df1.iloc[i, j] - df2.iloc[i, j]
-            row_differences.append(column_diff)
-        differences.append(row_differences)
+        row1 = df1.iloc[i, :].values
+        row2 = df2.iloc[i, :].values
+        differences.append(np.linalg.norm(row1 - row2))
     return differences

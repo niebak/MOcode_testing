@@ -13,7 +13,6 @@ def calculate_cosine_similarity(target, candidate):
 def score_candidate(df1, df2):
     df1_matrix = df1.values
     df2_matrix = df2.values
-    print(df1)
     cos_sim = cosine_similarity(df1_matrix, df2_matrix)[0][0]
     cos_sim_percentage = (cos_sim) / 1 * 100
     return cos_sim_percentage
@@ -23,6 +22,8 @@ def sliding_cosine_similarity(target,candidate,features=['curvature','climb','se
     Returns a list of the difference between the dataframes, if the window starts at the index.
     '''
     window_size = target.shape[0]
+    if window_size >candidate.shape[0]:
+        return 0
     # print('window size',window_size)
     difference = [np.inf] * (candidate.shape[0] - window_size + 1)
     target_values=target[features]
@@ -55,14 +56,17 @@ def sliding_window_features(target,candidate,features=['curvature','climb','seg_
 rawdatabase = 'LUW_example.xlsx'
 database = 'LUWfeature_example.xlsx'
 target_name = 'data/221005_eksempelsegment001.xlsx'
+# target_name = 'data/Evening_Run.fit'
 
 
 DB = pd.read_excel(database)
 rawDB = pd.read_excel(rawdatabase)
 stats = DB.describe()
 
+# Target = DF_to_segmented_DF(fit_records_to_frame(target_name,vars = ['position_lat', 'position_long', 'altitude', 'distance']))
+
 Target = DF_to_segmented_DF(pd.read_excel(target_name))
-# Target = Target[Target['segments'].isin([0,1,2,3,4,5,6,7,8,9])]
+Target = Target[Target['segments'].isin([0,1,2,3,4,5,6,7,8,9])]
 Target_features = (segments_to_feature_df_with_rev(Target))
 classify_feature_df(Target_features)
 Target_features['seg_distance']=Target_features['seg_distance']/stats['seg_distance'].loc['std']
@@ -73,8 +77,10 @@ num_of_trails = np.unique(DB['name'])[-1]+2
 print(num_of_trails)
 costs=[0]*num_of_trails
 paths=[0]*num_of_trails
-sliw_window_costs=[0]*num_of_trails
-sliw_window_paths=[0]*num_of_trails
+SWDIFFS=[0]*num_of_trails
+VADIFFS=[0]*num_of_trails
+sliw_window_costs=[np.inf]*num_of_trails
+sliw_window_paths=[np.inf]*num_of_trails
 
 k=Target.shape[0]
 ax0s=[]
@@ -98,84 +104,69 @@ for i in range(num_of_trails):
     # Finding the best part by using the VA 
     start_time=time.time()
     cost,path = ViterbiAlgorithm(Candidate_features,Target_features)
-    # cost,path = ViterbiAlgorithm(Candidate_features,Target_features)
     stop_time = time.time()
-    # looking at the winner-sequence
     VA_winner_path = Candidate_features.loc[Candidate_features['segments'].isin(path)].copy(deep=True)
     VA_winner_path.reset_index(drop=True,inplace=True)
 
     VA_winner = Candidate.loc[Candidate['segments'].isin(path)].copy(deep=True)
     VA_winner.reset_index(drop=True,inplace=True)
     VA_score = score_candidate(Target_features[features],VA_winner_path[features])
-    print(f'VA spent {round(stop_time-start_time,3)}s, score of {round(VA_score,2)}%, or cost of {cost}')
-    print(path)
-    # # print(VA_winner_path[features])
     VA_scores.append(VA_score)
-    # print_df(VA_winner_path)
-    # VA0,VA1=plot_segments_and_trail(VA_winner)
-    # Finding the best path by using a sliding window technuqie
-    start_time=time.time()
-    difference = sliding_window_features(Target_features,Candidate_features)
-    best_start = np.argmin(difference)
-    best_end = best_start + Target_features.shape[0]
-    best_segments = np.linspace(best_start,best_end-1,best_end-best_start)
-    stop_time = time.time()
 
-    SW_winner_path = Candidate_features.loc[Candidate_features['segments'].isin(best_segments)].copy(deep=True)
-    SW_winner_path.reset_index(drop = True,inplace=True)
-    SW_winner = Candidate.loc[Candidate['segments'].isin(best_segments)].copy(deep=True)
-    SW_winner.reset_index(drop = True,inplace=True)
-    SW_score = score_candidate(Target_features[features],SW_winner_path[features])
-    print(f'\nSW spent {round(stop_time-start_time,3)}s, score of {round(SW_score,2)}%')
-    print(best_segments)
-    # print(SW_winner_path[features])
-    SW_scores.append(SW_score)
+    # Finding the best path by using a sliding window technique, if applicable
+    if Target.shape[0]<=Candidate.shape[0]:
+        start_time=time.time()
+        difference = sliding_window_features(Target_features,Candidate_features)
+        best_start = np.argmin(difference)
+        best_end = best_start + Target_features.shape[0]
+        best_segments = np.linspace(best_start,best_end-1,best_end-best_start).astype(int)
+        stop_time = time.time()
 
+        SW_winner_path = Candidate_features.loc[Candidate_features['segments'].isin(best_segments)].copy(deep=True)
+        SW_winner_path.reset_index(drop = True,inplace=True)
+        SW_winner = Candidate.loc[Candidate['segments'].isin(best_segments)].copy(deep=True)
+        SW_winner.reset_index(drop = True,inplace=True)
+        SW_score = score_candidate(Target_features[features],SW_winner_path[features])
+        SW_scores.append(SW_score)
+        SWdiffs = (compare_dataframes(SW_winner_path[features],Target_features[features]))
 
-
-
-
-    # Find some method to create a better VA path that includes the correct segments and then see 
-    # The differences between the two methods using the copare dataframes function
-
-
-
-
-
-
-    # VA_winner_path = pd.DataFrame()
-    # for i in range(0,len(path)):
-    #     new = Candidate_features.iloc[i]
-    #     print(new)
-    #     VA_winner_path = pd.concat([VA_winner_path,new],ignore_index=True)
-    # print(VA_winner_path)
-    # VAdiffs = compare_dataframes(VA_winner_path[features],Target_features[features])
-    # SWdiffs = compare_dataframes(SW_winner_path[features],Target_features[features])
+    VA_winner_path = pd.DataFrame(columns=Candidate_features.columns)
+    for j in range(0,len(path)):
+        VA_winner_path.loc[j] = Candidate_features.loc[path[j]]
+    VAdiffs = (compare_dataframes(VA_winner_path[features],Target_features[features]))
     
-    print(VAdiffs)
+    print('VA \n',sum(VAdiffs),cost)
+    print(path)
     print('\n')
-    print(SWdiffs)
-    
+    if Target.shape[0]<=Candidate.shape[0]:
+        print('SW \n',sum(SWdiffs),difference[best_start])
+        print(best_segments)
+
     costs[i]=cost
     paths[i]=path
     sliw_window_costs[i]=difference[best_start]
     sliw_window_paths[i]=best_segments
-    
+    VADIFFS[i] = sum(VAdiffs)
+    SWDIFFS[i] = sum(SWdiffs)
+
+
 print('\nDone!\n')
 print(f'VA {np.mean(VA_scores)}\n')
 print(f'SW {np.mean(SW_scores)}\n')
+print(f'VA {np.mean(VADIFFS)}\n')
+print(f'SW {np.mean(SWDIFFS)}\n')
 costs.pop(np.argmin(costs)) # This has to be removed, as the target is present in the database
 costs.pop(np.argmin(costs)) # This has to be removed, as the target is present in the database
 sliw_window_costs.pop(np.argmin(sliw_window_costs)) # This has to be removed, as the target is present in the database
 sliw_window_costs.pop(np.argmin(sliw_window_costs)) # This has to be removed, as the target is present in the database
 best_candidate = np.argmin(costs)
-print(f'best trail is {best_candidate}, and the path through it is {paths[best_candidate]}, with a cost of {costs[best_candidate]}')
+print(f'best trail is {best_candidate}, and the path through it is {paths[best_candidate]}, with a cost of {costs[best_candidate]}\n{VADIFFS[best_candidate]}')
 features=['segments','curvature','seg_distance','climb']
 
 
 sw_winner=np.argmin(sliw_window_costs)
 sw_segments = sliw_window_paths[sw_winner]
-print(f'According to sliding window it is {sw_winner}, and these segments: {sw_segments}.\n')
+print(f'According to sliding window it is {sw_winner}, and these segments: {sw_segments}.\n{SWDIFFS[sw_winner]}')
 
 complete_winner = rawDB.loc[rawDB['name']==best_candidate].copy(deep=True)
 # print(complete_winner)
@@ -193,13 +184,13 @@ Target_features = (segments_to_feature_df_with_rev(Target))
 
 # # print(winner_path)
 
-# ax00,ax01=plot_segments_and_trail(Target)
-# ax01.legend()
-# ax10,ax11=plot_segments_and_trail(winner_path)
-# ax11.legend()
-# ax20,ax21=plot_segments_and_trail(sw_winner_path)
-# ax21.legend()
-# # plt.show()
+ax00,ax01=plot_segments_and_trail(Target)
+ax01.legend()
+ax10,ax11=plot_segments_and_trail(winner_path)
+ax11.legend()
+ax20,ax21=plot_segments_and_trail(sw_winner_path)
+ax21.legend()
+plt.show()
 
 # print(tabulate(segments_to_feature_df_with_rev(Target),headers='keys',tablefmt='github'))
 # print(tabulate(segments_to_feature_df_with_rev(winner_path),headers='keys',tablefmt='github'))
