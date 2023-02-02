@@ -323,6 +323,8 @@ def segments_to_feature_df(TDF0):
     curvature= [0]*(TDF0['segments'].iloc[-1]+1)
     climb = [0]*(TDF0['segments'].iloc[-1]+1)
     seg_dist = [0]*(TDF0['segments'].iloc[-1]+1)
+    grade = [0]*(TDF0['segments'].iloc[-1]+1)
+    velturn = [0]*(TDF0['segments'].iloc[-1]+1)
     segments = TDF0['segments'].tolist()
     for i in range(TDF0['segments'].iloc[-1]+1): # Loop through each segment
         segment = TDF0.loc[TDF0["segments"]==i]
@@ -339,7 +341,9 @@ def segments_to_feature_df(TDF0):
                 climb[i]=0
             # find the distance
             seg_dist[i]=find_distance(segment)
-    featdict={'segments':np.unique(segments),'curvature':curvature,'climb':climb,'seg_distance':seg_dist}
+            grade[i] = round((climb[i]/ seg_dist[i])*100,1)
+            velturn[i]= curvature[i]*abs(TDF0['velocity [m/s]'].loc[TDF0['segments']==i].mean())/10
+    featdict={'segments':np.unique(segments),'curvature':curvature,'climb':climb,'seg_distance':seg_dist,'grade':grade,'velturn':velturn}
     featureDF=pd.DataFrame(featdict)
     return featureDF
 def classify_feature_df(featureDF,curve_lim=1,climb_lim=3,inplace=True):
@@ -542,10 +546,14 @@ def segments_to_feature_df_with_rev(TDF0):
     '''
     if 'numpy' not in globals():
         import numpy as np
+    if 'pandas' not in globals():
+        import pandas as pd
     segments = np.unique(TDF0['segments'].tolist())
     curvature= [0]*(len(segments))
     climb = [0]*(len(segments))
     seg_dist = [0]*(len(segments))
+    grade = [0]*(len(segments))
+    velturn = [0]*(len(segments))
     for i in range(len(np.unique(segments))): # Loop through each segment
         seg = segments[i]
         segment = TDF0.loc[TDF0["segments"]==seg]
@@ -559,7 +567,13 @@ def segments_to_feature_df_with_rev(TDF0):
             climb[i]=0
         # find the distance
         seg_dist[i]=find_distance(segment)
-    featdict={'segments':np.unique(segments),'curvature':curvature,'revcurvature':[i * -1 for i in curvature],'climb':climb,'revclimb':[i * -1 for i in climb],'seg_distance':seg_dist}
+        if seg_dist[i]==0:
+            grade[i]=0
+        else:
+            grade[i] = round((climb[i]/ seg_dist[i])*100,1)
+        velturn[i]= curvature[i]*abs(TDF0['velocity [m/s]'].loc[TDF0['segments']==i].mean())/10
+    featdict={'segments':np.unique(segments),'curvature':curvature,'revcurvature':[i * -1 for i in curvature],'climb':climb,'revclimb':[i * -1 for i in climb]
+    ,'seg_distance':seg_dist,'velturn':velturn,'grade':grade}
     featureDF=pd.DataFrame(featdict)
     return featureDF
 def print_df(df,headers='keys',tablefmt='github'):
