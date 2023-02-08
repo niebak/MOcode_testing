@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft
-from code_functions import DF_to_segmented_DF
-df =DF_to_segmented_DF(pd.read_excel('data/221005_eksempelsegment001.xlsx'))
-# df = DF_to_segmented_DF(pd.read_parquet('data/2022-06-05-12-12-09 (1).parquet'))
+from code_functions import DF_to_segmented_DF,plot_segments_and_trail
+# df =DF_to_segmented_DF(pd.read_excel('data/221005_eksempelsegment001.xlsx'))
+df = DF_to_segmented_DF(pd.read_parquet('data/2022-06-05-12-12-09 (1).parquet')).iloc[0:1200]
 # time = df['distance']/df['speed'].mean()
 # time[0]=0
 
@@ -40,9 +40,11 @@ position_freq = np.fft.fftfreq(len(position_lat), time[1]-time[0])
 
 signal1_magnitude = np.abs(position_long_fft / len(position_lat))
 position_long_fft_db = 20 * np.log10(signal1_magnitude)
+df['long_fft_db']=position_long_fft_db
 
 signal1_magnitude = np.abs(position_lat_fft / len(position_lat))
 position_lat_fft_db = 20 * np.log10(signal1_magnitude)
+df['lat_fft_db']=position_lat_fft_db
 
 plt.scatter(position_freq, np.abs(position_lat_fft_db), c='red')
 plt.scatter(position_freq, np.abs(position_long_fft_db), c='blue')
@@ -51,5 +53,6 @@ plt.xlim(left=-0.01,right=0.4)
 plt.ylabel('Amplitude')
 plt.title('FFT of Latitude and Longitude Positions')
 plt.grid()
+ax,ax0=plot_segments_and_trail(df)
 plt.show()
 
