@@ -542,6 +542,8 @@ def segments_to_feature_df_with_rev(TDF0):
     '''
     if 'numpy' not in globals():
         import numpy as np
+    if 'pandas' not in globals():
+        import pandas as pd
     segments = np.unique(TDF0['segments'].tolist())
     curvature= [0]*(len(segments))
     climb = [0]*(len(segments))
