@@ -1,4 +1,4 @@
-from VA_improved import ViterbiAlgorithm,Differential_ViterbiAlgorithm,tanh,sliding_window_features
+from OldTestCode.VA_improved import ViterbiAlgorithm,Differential_ViterbiAlgorithm,tanh,sliding_window_features
 from code_functions import *
 import pandas as pd
 import time
