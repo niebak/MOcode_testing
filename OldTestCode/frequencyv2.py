@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft
+import sys
+sys.path.append('../DIVCODE')
 from code_functions import DF_to_segmented_DF,plot_segments_and_trail
 # df =DF_to_segmented_DF(pd.read_excel('data/221005_eksempelsegment001.xlsx'))
 df = DF_to_segmented_DF(pd.read_parquet('data/2022-06-05-12-12-09 (1).parquet')).iloc[0:1200]

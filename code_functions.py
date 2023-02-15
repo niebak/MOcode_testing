@@ -133,7 +133,7 @@ def plot_segments_and_trail(TDF0,x_axis='position_long',y_axis='position_lat',
     if Show_Plot:
         plt.show()
     return ax0,ax1
-def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
+def fit_records_to_frame(fitfile, vars=['position_lat','position_long','altitude','distance'], max_samp=36000):
     '''Returnerer en dataframe med valgfrie variabler per records fra fitfilen.
     Variabler man ønsker må legges inn i vars, f.eks.:
     vars = ['position_lat', 'position_long', 'altitude', 'distance',
@@ -144,6 +144,10 @@ def fit_records_to_frame(fitfile, vars=[], max_samp=36000):
     kan hente ut. Standard tilsvarer 10 timer, som burde holde for de
     fleste .fit-filer.
     '''
+    if 'numpy' not in globals():
+        import numpy as np
+    if 'pandas' not in globals():
+        import pandas as pd
     from fitparse import FitFile
     if 'timestamp' in vars:
         vars.remove('timestamp')
@@ -187,9 +191,11 @@ def DF_to_segmented_DF(DF,threshold=10):
     TDF0_seg =  marker_to_segment(TDF0_seg_marker, initial_segment=0)
     TDF0=pd.concat([TDF0,TDF0_vector],axis=1)
     TDF0['segments']=TDF0_seg
-    if 'timestamp' in TDF0.columns:
+    if 'timestamp' in TDF0.columns and ('velocity [m/s]' not in TDF0.columns):
         add_velocity_column(TDF0)
-        TDF0['seconds'] = TDF0['timestamp'].diff()
+        TDF0['seconds'] = TDF0['timestamp'].diff().apply(lambda x: x.total_seconds())
+        TDF0['seconds'].iloc[0]=0
+
     else:
         print('Have not added velocity column to Dataframe, errors might come as a result of this')
     if 'timestamp' not in TDF0.columns and 'speed' in TDF0.columns:
@@ -197,11 +203,14 @@ def DF_to_segmented_DF(DF,threshold=10):
         TDF0['seconds'] = (TDF0['distance'].diff()/TDF0['speed']).cumsum()
         TDF0['seconds'].iloc[0]=0
         TDF0['timestamp'] = TDF0.apply(lambda row: datetime.utcfromtimestamp(row['seconds']), axis=1)
+        TDF0['seconds'] = TDF0['timestamp'].diff().apply(lambda x: x.total_seconds())
+        TDF0['seconds'].iloc[0]=0
         print('Added timestamp, will lack date and year')
     if 'speed' in TDF0.columns:
         TDF0.rename(columns={'speed':'velocity [m/s]'},inplace=True)
         print('Renamed "speed" to "velocity [m/s]"')
-    
+    TDF0['diff_distance'] = TDF0['distance'].diff()
+    TDF0['diff_distance'].iloc[0]=0
      # Check only the last segment
     last_segment = TDF0.loc[TDF0["segments"]== TDF0['segments'].iloc[-1]]
     if len(last_segment) < threshold:
