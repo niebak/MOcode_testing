@@ -573,13 +573,12 @@ def segments_to_feature_df_with_rev(TDF0):
     featdict={'segments':np.unique(segments),'curvature':curvature,'revcurvature':[i * -1 for i in curvature],'climb':climb,'revclimb':[i * -1 for i in climb],'seg_distance':seg_dist}
     featureDF=pd.DataFrame(featdict)
     return featureDF
-def print_df(df,headers='keys',tablefmt='github'):
+def print_df(df,headers='keys',tablefmt='github',length=10):
     if 'tabulate' not in globals():
         from tabulate import tabulate
-    if df.shape[0]<11:
+    if df.shape[0]<length:
         length = df.shape[0]
-    else:
-        length=10
+    
     print('\n')
     print(tabulate(df.iloc[0:length], headers=headers, tablefmt=tablefmt))
     print('\n')
