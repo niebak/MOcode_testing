@@ -174,7 +174,7 @@ ax1.set_ylim([0, 0.15])
 ax1.set_xlabel('Time (s)')
 ax1.set_ylabel('Frequency (Hz)')
 ax1.set_title('Spectrogram for second section')
-# plt.show()
+plt.show()
 
 # print('Window samples 1',window_samples1)
 # print('Window samples',window_samples)

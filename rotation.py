@@ -75,13 +75,16 @@ for i in np.unique(TDF0['segments'].to_numpy()):
 
     #Plot the original graph
     fig=plt.figure()
-    ax2=fig.add_subplot(2,1,1)
-    ax3=fig.add_subplot(2,1,2)
+    fig2=plt.figure()
+    ax2=fig.add_subplot(1,1,1)
+    ax3=fig2.add_subplot(1,1,1)
     ax2.plot(x, y)
+    ax2.grid()
     # ax2.plot(lonline,latline)
     ax2.set_title('Original Graph')
     #Plot the rotated graph
     # ax3.plot(rotated_x, rotated_y)
     ax3.stem(distances)
+    ax3.grid()
     ax3.set_title('stemmed Graph')
     plt.show()
