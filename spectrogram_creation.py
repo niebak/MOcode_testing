@@ -142,7 +142,7 @@ TDF0 = DF_to_segmented_DF(pd.read_excel('data/221005_eksempelsegment001.xlsx'))
 file = 'data/Evening_Run.fit'
 # TDF0 = DF_to_segmented_DF(fit_records_to_frame(file)).iloc[200:400]
 TDF1 = DF_to_segmented_DF(fit_records_to_frame(file)).iloc[200:600]
-# plot_segments_and_trail(TDF0,Show_Plot=True)
+plot_segments_and_trail(TDF0,Show_Plot=True)
 
 avrg_samplefreq = 1/(np.mean(TDF0['seconds']))
 sample_rate = avrg_samplefreq
@@ -159,22 +159,22 @@ ax3.set_ylim([0, 0.15])
 ax3.set_xlabel('Time (s)')
 ax3.set_ylabel('Frequency (Hz)')
 ax3.set_title('Spectrogram for first section')
-
-avrg_samplefreq1 = 1/np.mean(TDF1['seconds'])
-sample_rate1 = avrg_samplefreq1
-window_samples1 = int(window_size * sample_rate1)
-overlap1 = window_samples1 // 2
-amps1,coords_rot1 = rotate_and_curve_amplitude(TDF1)
-signal1 = np.array(amps1)
-f1, t1, Sxx1 = spectrogram(signal1, fs=sample_rate1, window='hann', nperseg=window_samples1, noverlap=overlap1, scaling='spectrum')
-fig1, ax1 = plt.subplots(figsize=(6, 4))
-
-ax1.pcolormesh(t1, f1, np.log10(Sxx1), cmap='inferno')
-ax1.set_ylim([0, 0.15])
-ax1.set_xlabel('Time (s)')
-ax1.set_ylabel('Frequency (Hz)')
-ax1.set_title('Spectrogram for second section')
 plt.show()
+# avrg_samplefreq1 = 1/np.mean(TDF1['seconds'])
+# sample_rate1 = avrg_samplefreq1
+# window_samples1 = int(window_size * sample_rate1)
+# overlap1 = window_samples1 // 2
+# amps1,coords_rot1 = rotate_and_curve_amplitude(TDF1)
+# signal1 = np.array(amps1)
+# f1, t1, Sxx1 = spectrogram(signal1, fs=sample_rate1, window='hann', nperseg=window_samples1, noverlap=overlap1, scaling='spectrum')
+# fig1, ax1 = plt.subplots(figsize=(6, 4))
+
+# ax1.pcolormesh(t1, f1, np.log10(Sxx1), cmap='inferno')
+# ax1.set_ylim([0, 0.15])
+# ax1.set_xlabel('Time (s)')
+# ax1.set_ylabel('Frequency (Hz)')
+# ax1.set_title('Spectrogram for second section')
+# plt.show()
 
 # print('Window samples 1',window_samples1)
 # print('Window samples',window_samples)
@@ -183,8 +183,8 @@ start_freq=0
 end_freq=0.135
 num_bins=15
 
-bin_edge0,bin_energy0 = split_freq_bands(Sxx,f,start_freq,end_freq,num_bins)
-bin_edge1,bin_energy1 = split_freq_bands(Sxx1,f1,start_freq,end_freq,num_bins)
-temp = spectrogram_correlation(bin_energy0,bin_energy1)
-print(bin_energy0.shape,bin_energy1.shape)
-print(temp)
+# bin_edge0,bin_energy0 = split_freq_bands(Sxx,f,start_freq,end_freq,num_bins)
+# bin_edge1,bin_energy1 = split_freq_bands(Sxx1,f1,start_freq,end_freq,num_bins)
+# temp = spectrogram_correlation(bin_energy0,bin_energy1)
+# print(bin_energy0.shape,bin_energy1.shape)
+# print(temp)
